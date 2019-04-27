@@ -60,26 +60,6 @@ function Conv1d( config ) {
 
 	this.isShapePredefined = false;
 
-	// Load user's Conv1d configuration.
-
-	this.loadLayerConfig( config );
-
-	// Init close grid line centers.
-
-	for ( let i = 0; i < this.depth; i ++ ) {
-
-		let center = {
-
-			x: 0,
-			y: 0,
-			z: 0
-
-		};
-
-		this.closeCenterList.push( center );
-
-	}
-
 	this.layerType = "Conv1d";
 
 }
@@ -98,15 +78,31 @@ Conv1d.prototype = Object.assign( Object.create( NativeLayer2d.prototype ), {
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	assemble: function() {
+		
+		// Load user's Conv1d configuration.
+		
+		this.loadLayerConfig( this.config );
+		
+		// Init close grid line centers.
+		
+		for ( let i = 0; i < this.depth; i ++ ) {
+			
+			let center = {
+				
+				x: 0,
+				y: 0,
+				z: 0
+				
+			};
+			
+			this.closeCenterList.push( center );
+			
+		}
+		
 		this.inputShape = this.lastLayer.outputShape;
 
 		// If user's do not define a specific shape for layer, infer layer output shape from input shape and config.
@@ -227,59 +223,63 @@ Conv1d.prototype = Object.assign( Object.create( NativeLayer2d.prototype ), {
 
 		if ( layerConfig !== undefined ) {
 
-			// "filters" configuration is required.
-
-			if ( layerConfig.filters !== undefined ) {
-
-				this.filters = layerConfig.filters;
-				this.depth = layerConfig.filters;
-
-			} else {
-
-				console.error( "\"filters\" property is required for conv1d layer." );
-
-			}
-
-			// Optional configuration.
-
-			if ( layerConfig.strides !== undefined ) {
-
-				this.strides = layerConfig.strides;
-
-			}
-
-			if ( layerConfig.kernelSize !== undefined ) {
-
-				this.kernelSize = layerConfig.kernelSize;
-
-			}
-
-			// Load padding mode, accept two mode: "valid" and "same", support both uppercase and lowercase.
-
-			if ( layerConfig.padding !== undefined ) {
-
-				if ( layerConfig.padding.toLowerCase() === "valid" ) {
-
-					this.padding = "valid";
-
-				} else if ( layerConfig.padding.toLowerCase() === "same" ) {
-
-					this.padding = "same";
-
-				} else {
-
-					console.error( "\"padding\" property do not support for " + layerConfig.padding + ", use \"valid\" or \"same\" instead." );
-
-				}
-
-			}
-
-			// Load user's predefined shape.
-
 			if ( layerConfig.shape !== undefined ) {
+
+				// Load user's predefined shape.
 
 				this.isShapePredefined = true;
 				this.width = layerConfig.shape[ 0 ];
+				this.filters = layerConfig.shape[ 1 ];
+				this.depth = layerConfig.shape[ 1 ];
+
+			} else {
+
+				// "filters" configuration is required.
+
+				if ( layerConfig.filters !== undefined ) {
+
+					this.filters = layerConfig.filters;
+					this.depth = layerConfig.filters;
+
+				} else {
+
+					console.error( "\"filters\" property is required for conv1d layer." );
+
+				}
+
+				// Optional configuration.
+
+				if ( layerConfig.strides !== undefined ) {
+
+					this.strides = layerConfig.strides;
+
+				}
+
+				if ( layerConfig.kernelSize !== undefined ) {
+
+					this.kernelSize = layerConfig.kernelSize;
+
+				}
+
+				// Load padding mode, accept two mode: "valid" and "same", support both uppercase and lowercase.
+
+				if ( layerConfig.padding !== undefined ) {
+
+					if ( layerConfig.padding.toLowerCase() === "valid" ) {
+
+						this.padding = "valid";
+
+					} else if ( layerConfig.padding.toLowerCase() === "same" ) {
+
+						this.padding = "same";
+
+					} else {
+
+						console.error( "\"padding\" property do not support for " + layerConfig.padding + ", use \"valid\" or \"same\" instead." );
+
+					}
+
+				}
 
 			}
 

@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { NativeLayer } from "../abstract/NativeLayer";
 import { YoloOutputUnit } from "../../elements/YoloOuputUnit";
 import { YoloTweenFactory } from "../../animation/YoloTransitionTween";
@@ -123,6 +124,14 @@ function YoloGrid( config ) {
     this.isDrawFiveBoxes = false;
 
     /**
+     * The toggle to control whether to apply non-maximum suppression to the detection rectangles .
+     * [Default] true, means to apply nms.
+     * @type { bool }
+     */
+
+    this.isNMS = true;
+
+    /**
 	 * Model's input shape, the shape is the same as model's input layer.
 	 *
 	 * @type { Array }
@@ -138,10 +147,6 @@ function YoloGrid( config ) {
 	 */
 
 	this.autoOutputDetect = true;
-
-	// Load user's YoloGrid configuration.
-
-	this.loadLayerConfig( config );
 
 	this.layerType = "YoloGrid";
 
@@ -198,9 +203,9 @@ YoloGrid.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
 
 		}
 
-		// Add the wrapper object to the actual THREE.js scene.
+		// Add the wrapper object to the actual THREE.js object.
 
-		this.scene.add( this.neuralGroup );
+		this.context.add( this.neuralGroup );
 
 		// Create relative line element.
 
@@ -209,15 +214,15 @@ YoloGrid.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
 	},
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function ( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	assemble: function() {
+		
+		// Load user's YoloGrid configuration.
+		
+		this.loadLayerConfig( this.config );
+		
 		// Auto detect input shape from last layer.
 
 		this.inputShape = this.lastLayer.outputShape;
@@ -598,6 +603,8 @@ YoloGrid.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
                     this.anchors,
                     this.classLabelList,
                     this.scoreThreshold,
+					this.iouThreshold,
+                    this.isNMS,
 				)
 
 			} else {
@@ -611,6 +618,7 @@ YoloGrid.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
                     this.anchors,
                     this.classLabelList,
                     this.scoreThreshold,
+                    this.iouThreshold,
                     this.isDrawFiveBoxes,
                     widthIndex,
                     heightIndex
@@ -673,7 +681,11 @@ YoloGrid.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
 
             this.scoreThreshold = layerConfig.scoreThreshold;
 
+            this.iouThreshold = layerConfig.iouThreshold;
+
             this.isDrawFiveBoxes = layerConfig.isDrawFiveBoxes;
+
+			this.isNMS = layerConfig.isNMS;
 
 		}
 

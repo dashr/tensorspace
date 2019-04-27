@@ -45,20 +45,24 @@ GlobalPooling2d.prototype = Object.assign( Object.create( NativeLayer3d.prototyp
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
+	assemble: function() {
+		
+		// Load user's GlobalPooling2d configuration.
+		
+		this.loadLayerConfig( this.config );
+		
+		// If user's do not define a specific shape for layer, infer layer output shape from input shape and config.
 
-		this.layerIndex = layerIndex;
+		if ( !this.isShapePredefined ) {
 
-		this.depth = this.lastLayer.depth;
+			this.depth = this.lastLayer.depth;
 
-		// GlobalPooling2d layer's outputShape has three dimension, that's why GlobalPooling2d layer inherits from abstract layer "NativeLayer3d".
+		}
 
-		this.outputShape = [ 1, 1, this.depth ];
+		this.outputShape = [ this.depth ];
 
 		// Unit length is the same as last layer, use unit length to calculate actualWidth and actualHeight which are used to create three.js object.
 
@@ -248,6 +252,30 @@ GlobalPooling2d.prototype = Object.assign( Object.create( NativeLayer3d.prototyp
 		}
 
 	},
+
+	/**
+	 * loadLayerConfig() Load user's configuration into GlobalPooling2d.
+	 * The configuration load in this function sometimes has not been loaded in loadBasicLayerConfig.
+	 *
+	 * @param { JSON } layerConfig, user's configuration for GlobalPooling2d.
+	 */
+
+	loadLayerConfig: function( layerConfig ) {
+
+		if ( layerConfig !== undefined ) {
+
+			if ( layerConfig.shape !== undefined ) {
+
+				// Load user's predefined shape.
+
+				this.isShapePredefined = true;
+				this.depth = layerConfig.shape[ 0 ];
+
+			}
+
+		}
+
+	}
 
 } );
 

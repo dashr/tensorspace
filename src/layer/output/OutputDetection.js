@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { NativeLayer } from "../abstract/NativeLayer";
 import { OutputMap3d } from "../../elements/OutputMap3d";
 import { ColorUtils } from "../../utils/ColorUtils";
@@ -65,10 +66,6 @@ function OutputDetection( config ) {
 
 	this.autoOutputDetect = true;
 
-	// Load user's OutputDetection configuration.
-
-	this.loadLayerConfig( config );
-
 	this.layerType = "OutputDetection";
 
 }
@@ -124,9 +121,9 @@ OutputDetection.prototype = Object.assign( Object.create( NativeLayer.prototype 
 
 		}
 
-		// Add the wrapper object to the actual THREE.js scene.
+		// Add the wrapper object to the actual THREE.js object.
 
-		this.scene.add( this.neuralGroup );
+		this.context.add( this.neuralGroup );
 
 		// Create relative line element.
 
@@ -135,15 +132,15 @@ OutputDetection.prototype = Object.assign( Object.create( NativeLayer.prototype 
 	},
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	assemble: function() {
+		
+		// Load user's OutputDetection configuration.
+		
+		this.loadLayerConfig( this.config );
+		
 		// Automatically detect model's input shape as outputShape.
 
 		let modelInputShape = this.model.layers[ 0 ].outputShape;
@@ -427,7 +424,12 @@ OutputDetection.prototype = Object.assign( Object.create( NativeLayer.prototype 
 			this.disposeAggregationElement();
 			this.initOutput();
 			this.updateOutputVis();
-			this.initCloseButton();
+			
+			if ( this.hasCloseButton ) {
+				
+				this.initCloseButton();
+				
+			}
 
 		}
 
@@ -446,7 +448,13 @@ OutputDetection.prototype = Object.assign( Object.create( NativeLayer.prototype 
 			this.isOpen = false;
 
 			this.disposeOutput();
-			this.disposeCloseButton();
+			
+			if ( this.hasCloseButton ) {
+				
+				this.disposeCloseButton();
+				
+			}
+			
 			this.initAggregationElement();
 
 		}

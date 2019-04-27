@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as tf from "@tensorflow/tfjs";
 import { Loader } from './Loader';
 import { KerasPredictor } from "../predictor/KerasPredictor";
 
@@ -61,10 +62,16 @@ KerasLoader.prototype = Object.assign( Object.create( Loader.prototype ), {
 	 */
 
 	load: async function() {
-
-		const loadedModel = await tf.loadModel( this.url );
+		
+		const loadedModel = await tf.loadLayersModel( this.url, this.tfjsLoadOption );
 
 		this.model.resource = loadedModel;
+
+		if ( this.model.modelType === "Model" ) {
+
+			this.model.outputsOrder = loadedModel.outputNames;
+
+		}
 
 		this.setPredictor();
 

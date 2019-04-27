@@ -51,10 +51,6 @@ function Pooling1d( config ) {
 
 	this.isShapePredefined = false;
 
-	// Load user's Pooling1d configuration.
-
-	this.loadLayerConfig( config );
-
 	this.layerType = "Pooling1d";
 
 }
@@ -73,15 +69,15 @@ Pooling1d.prototype = Object.assign( Object.create( NativeLayer2d.prototype ), {
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	assemble: function() {
+		
+		// Load user's Pooling1d configuration.
+		
+		this.loadLayerConfig( this.config );
+		
 		this.inputShape = this.lastLayer.outputShape;
 
 		//  If user's do not define a specific shape for layer, infer layer output shape from input shape and config.
@@ -240,56 +236,59 @@ Pooling1d.prototype = Object.assign( Object.create( NativeLayer2d.prototype ), {
 
 		if ( layerConfig !== undefined ) {
 
-			// "poolSize" configuration is required.
-
-			if ( layerConfig.poolSize !== undefined ) {
-
-				this.poolSize = layerConfig.poolSize;
-
-			} else {
-
-				console.error( "\"poolSize\" property is required for pooling1d layer." );
-
-			}
-
-			// "strides" configuration is required.
-
-			if ( layerConfig.strides !== undefined ) {
-
-				this.strides = layerConfig.strides;
-
-			} else {
-
-				console.error( "\"strides\" property is required for pooling1d layer." );
-
-			}
-
-			// Load padding mode, accept two mode: "valid" and "same", support both uppercase and lowercase.
-
-			if ( layerConfig.padding !== undefined ) {
-
-				if ( layerConfig.padding === "valid" ) {
-
-					this.padding = "valid";
-
-				} else if ( layerConfig.padding === "same" ) {
-
-					this.padding = "same";
-
-				} else {
-
-					console.error( "\"padding\" property do not support for " + layerConfig.padding + ", use \"valid\" or \"same\" instead." );
-
-				}
-
-			}
-
-			// Load user's predefined 2d shape.
-
 			if ( layerConfig.shape !== undefined ) {
+
+				// Load user's predefined shape.
 
 				this.isShapePredefined = true;
 				this.width = layerConfig.shape[ 0 ];
+				this.depth = layerConfig.shape[ 1 ];
+
+			} else {
+
+				// "poolSize" configuration is required.
+
+				if ( layerConfig.poolSize !== undefined ) {
+
+					this.poolSize = layerConfig.poolSize;
+
+				} else {
+
+					console.error( "\"poolSize\" property is required for pooling1d layer." );
+
+				}
+
+				// "strides" configuration is required.
+
+				if ( layerConfig.strides !== undefined ) {
+
+					this.strides = layerConfig.strides;
+
+				} else {
+
+					console.error( "\"strides\" property is required for pooling1d layer." );
+
+				}
+
+				// Load padding mode, accept two mode: "valid" and "same", support both uppercase and lowercase.
+
+				if ( layerConfig.padding !== undefined ) {
+
+					if ( layerConfig.padding === "valid" ) {
+
+						this.padding = "valid";
+
+					} else if ( layerConfig.padding === "same" ) {
+
+						this.padding = "same";
+
+					} else {
+
+						console.error( "\"padding\" property do not support for " + layerConfig.padding + ", use \"valid\" or \"same\" instead." );
+
+					}
+
+				}
 
 			}
 

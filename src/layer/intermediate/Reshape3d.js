@@ -37,10 +37,6 @@ function Reshape3d( config ) {
 
 	this.totalSize = 1;
 
-	// Load user's Reshape configuration.
-
-	this.loadLayerConfig( config );
-
 	this.layerType = "Reshape3d";
 
 }
@@ -59,15 +55,15 @@ Reshape3d.prototype = Object.assign( Object.create( NativeLayer3d.prototype ), {
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	assemble: function() {
+		
+		// Load user's Reshape configuration.
+		
+		this.loadLayerConfig( this.config );
+		
 		this.inputShape = this.lastLayer.outputShape;
 
 		// Calculate layer's shape from last layer and user's configuration.
@@ -77,7 +73,7 @@ Reshape3d.prototype = Object.assign( Object.create( NativeLayer3d.prototype ), {
 			this.totalSize *= this.inputShape[ i ];
 
 		}
-
+		
 		// Check whether the input shape can be reshape into target shape.
 
 		if  ( this.totalSize !== this.width * this.height * this.depth ) {
@@ -211,14 +207,14 @@ Reshape3d.prototype = Object.assign( Object.create( NativeLayer3d.prototype ), {
 
 		if ( layerConfig !== undefined ) {
 
-			// "targetShape" configuration is required.
+			if ( layerConfig.shape !== undefined ) {
 
-			if ( layerConfig.targetShape !== undefined ) {
+				// Load user's predefined layer shape.
 
-				this.targetShape = layerConfig.targetShape;
-				this.width = layerConfig.targetShape[ 0 ];
-				this.height = layerConfig.targetShape[ 1 ];
-				this.depth = layerConfig.targetShape[ 2 ];
+				this.isShapePredefined = true;
+				this.width = layerConfig.shape[ 0 ];
+				this.height = layerConfig.shape[ 1 ];
+				this.depth = layerConfig.shape[ 2 ];
 
 				// Reshape3d layer's outputShape has three dimension, that's why Reshape3d layer inherits from abstract layer "NativeLayer3d".
 
@@ -226,7 +222,24 @@ Reshape3d.prototype = Object.assign( Object.create( NativeLayer3d.prototype ), {
 
 			} else {
 
-				console.error( "\"targetShape\" property is required for reshape layer" );
+				// "targetShape" configuration is required.
+
+				if ( layerConfig.targetShape !== undefined ) {
+
+					this.targetShape = layerConfig.targetShape;
+					this.width = layerConfig.targetShape[ 0 ];
+					this.height = layerConfig.targetShape[ 1 ];
+					this.depth = layerConfig.targetShape[ 2 ];
+
+					// Reshape3d layer's outputShape has three dimension, that's why Reshape3d layer inherits from abstract layer "NativeLayer3d".
+
+					this.outputShape = [ this.width, this.height, this.depth ];
+
+				} else {
+
+					console.error( "\"targetShape\" property is required for reshape layer" );
+
+				}
 
 			}
 

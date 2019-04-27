@@ -2,6 +2,8 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as TWEEN from '@tweenjs/tween.js';
+
 let OutputTransitionFactory = ( function() {
 
 	function openLayer( layer ) {
@@ -51,7 +53,11 @@ let OutputTransitionFactory = ( function() {
 
 		} ).onComplete( function() {
 
-			layer.initCloseButton();
+			if ( layer.hasCloseButton ) {
+				
+				layer.initCloseButton();
+				
+			}
 
 			if ( layer.paging ) {
 
@@ -84,7 +90,11 @@ let OutputTransitionFactory = ( function() {
 		let closeTween = new TWEEN.Tween( init )
 			.to( end, layer.openTime );
 
-		layer.disposeCloseButton();
+		if ( layer.hasCloseButton ) {
+			
+			layer.disposeCloseButton();
+			
+		}
 
 		closeTween.onUpdate( function() {
 
@@ -115,8 +125,7 @@ let OutputTransitionFactory = ( function() {
 			}
 
 		} ).onComplete( function() {
-
-			console.log( "end close output layer" );
+			
 			layer.disposeOutputElement();
 			layer.initAggregationElement();
 

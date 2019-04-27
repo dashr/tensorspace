@@ -1,24 +1,8 @@
 /**
- * Created by ss on 2018/6/25.
+ * @author syt123450 / https://github.com/syt123450
+ * @author botime / https://github.com/botime
  */
 
-export default [
+import { defaultConfig } from './rollup.default.config.js';
 
-    {
-
-        input: 'src/tensorspace.js',
-        output: [
-
-            {
-
-                format: 'iife',
-                file: 'build/tensorspace.js',
-                name: "TSP"
-
-            }
-
-        ]
-
-    }
-
-];
+export default defaultConfig( 'build', true );

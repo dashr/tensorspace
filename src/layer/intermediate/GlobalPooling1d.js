@@ -44,21 +44,25 @@ GlobalPooling1d.prototype = Object.assign( Object.create( NativeLayer2d.prototyp
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
+	assemble: function() {
+		
+		// Load user's GlobalPooling1d configuration.
+		
+		this.loadLayerConfig( this.config );
+		
+		// If user's do not define a specific shape for layer, infer layer output shape from input shape and config.
 
-		this.layerIndex = layerIndex;
+		if ( !this.isShapePredefined ) {
 
-		this.inputShape = this.lastLayer.outputShape;
-		this.depth = this.inputShape[ 1 ];
+			this.inputShape = this.lastLayer.outputShape;
+			this.depth = this.inputShape[ 1 ];
 
-		// GlobalPooling1d layer's outputShape has two dimension, that's why GlobalPooling1d layer inherits from abstract layer "NativeLayer2d".
+		}
 
-		this.outputShape = [ 1, this.depth ];
+		this.outputShape = [ this.depth ];
 
 		// Unit length is the same as last layer, use unit length to calculate actualWidth and actualHeight which are used to create three.js object.
 
@@ -243,6 +247,30 @@ GlobalPooling1d.prototype = Object.assign( Object.create( NativeLayer2d.prototyp
 			let fmIndex = element.fmIndex;
 			this.queueHandlers[ fmIndex ].showText();
 			this.textElementHandler = this.queueHandlers[ fmIndex ];
+
+		}
+
+	},
+
+	/**
+	 * loadLayerConfig() Load user's configuration into GlobalPooling1d.
+	 * The configuration load in this function sometimes has not been loaded in loadBasicLayerConfig.
+	 *
+	 * @param { JSON } layerConfig, user's configuration for GlobalPooling1d.
+	 */
+
+	loadLayerConfig: function( layerConfig ) {
+
+		if ( layerConfig !== undefined ) {
+
+			if ( layerConfig.shape !== undefined ) {
+
+				// Load user's predefined shape.
+
+				this.isShapePredefined = true;
+				this.depth = layerConfig.shape[ 0 ];
+
+			}
 
 		}
 

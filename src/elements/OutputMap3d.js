@@ -1,3 +1,8 @@
+/**
+ * @author syt123450 / https://github.com/syt123450
+ */
+
+import * as THREE from "three";
 import { SideFaceRatio } from "../utils/Constant";
 import { TextFont } from "../assets/fonts/TextFont";
 import { TextHelper } from "../utils/TextHelper";
@@ -92,6 +97,7 @@ OutputMap3d.prototype = {
 		cube.elementType = "outputMap3d";
 		cube.clickable = true;
 		cube.hoverable = true;
+		cube.draggable = true;
 
 		this.outputMap = cube;
 
@@ -112,7 +118,7 @@ OutputMap3d.prototype = {
 	},
 
 	clear: function() {
-
+		
 		let zeroData = new Int8Array( 3 * this.width * this.height );
 		let zeroColors = ColorUtils.getAdjustValues( zeroData, this.minOpacity );
 
@@ -228,7 +234,7 @@ OutputMap3d.prototype = {
 	},
 
 	updateVis: function( imageData, rectList ) {
-
+		
 		this.drawImage( imageData );
 		this.drawRectangles( rectList );
 
@@ -237,18 +243,18 @@ OutputMap3d.prototype = {
 	},
 
 	drawRectangles: function( rectList ) {
-
+		
 		for ( let i = 0; i < rectList.length; i ++ ) {
-
+			
 			let rectParameter = rectList[ i ];
-
+			
 			this.drawRect(
-
+				
 				rectParameter.x,
-				rectParameter.y,
+				this.height - rectParameter.y - rectParameter.height,
 				rectParameter.width,
 				rectParameter.height
-
+			
 			);
 
 		}
@@ -256,7 +262,8 @@ OutputMap3d.prototype = {
 	},
 
 	drawRect: function( x, y, width, height ) {
-
+		
+		this.ctx.beginPath();
 		this.ctx.rect( x, y, width, height );
 		this.ctx.stroke();
 
@@ -267,22 +274,22 @@ OutputMap3d.prototype = {
 		let imageData = this.ctx.getImageData( 0, 0, this.width, this.height );
 
 		let imageDataValue = imageData.data;
-
+		
 		let count = 0;
-
-		for ( let i = 0; i < imageDataValue.length; i ++ ) {
-
-			if ( i % 4 !== 3 ) {
-
-				imageDataValue[ i ] = 255 * data[ count ];
-				count++;
-
-			} else {
-
-				imageDataValue[ i ]  = 255;
-
+	
+		for ( let i = this.height - 1; i >= 0; i -- ) {
+			
+			for ( let j = 0; j < this.width; j ++ ) {
+				
+				imageDataValue[ 4 * ( this.width * i + j ) ] = 255 * data[ count ];
+				imageDataValue[ 4 * ( this.width * i + j ) + 1 ] = 255 * data[ count + 1 ];
+				imageDataValue[ 4 * ( this.width * i + j ) + 2 ] = 255 * data[ count + 2 ];
+				imageDataValue[ 4 * ( this.width * i + j ) + 3 ] = 255;
+				
+				count += 3;
+				
 			}
-
+			
 		}
 
 		this.ctx.putImageData( imageData, 0, 0 );

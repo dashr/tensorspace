@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { SideFaceRatio } from "../utils/Constant";
 import { TextFont } from "../assets/fonts/TextFont";
 import { TextHelper } from "../utils/TextHelper";
@@ -33,7 +34,10 @@ function InputMap3d( width, height, unitLength, actualDepth, initCenter, color, 
 	this.neuralLength = 3 * width * height;
 
 	this.dataArray = undefined;
+	this.dataArrayCache = undefined;
 	this.dataTexture = undefined;
+	
+	this.basicMaterial = undefined;
 
 	this.colorMap = undefined;
 	this.colorGroup = undefined;
@@ -77,6 +81,8 @@ InputMap3d.prototype = {
 			opacity: this.sideOpacity
 
 		} );
+		
+		this.basicMaterial = basicMaterial;
 
 		let materials = [
 
@@ -93,6 +99,10 @@ InputMap3d.prototype = {
 		cube.elementType = "RGBInputElement";
 		cube.clickable = true;
 		cube.hoverable = true;
+		cube.draggable = true;
+		cube.emissiveable = true;
+		
+		cube.context = this;
 
 		this.colorMap = cube;
 
@@ -239,6 +249,48 @@ InputMap3d.prototype = {
 
 		this.isTextShown = false;
 
+	},
+	
+	emissive: function() {
+		
+		let cacheData = new Uint8Array( this.dataArray.length );
+		
+		for ( let i = 0; i < this.dataArray.length; i ++ ) {
+			
+			cacheData[ i ] = this.dataArray[ i ];
+			
+		}
+		
+		this.dataArrayCache = cacheData;
+		
+		for ( let i = 0; i < this.dataArray.length; i ++ ) {
+			
+			this.dataArray[ i ] = Math.min( this.dataArray[ i ] + 30, 255 );
+			
+		}
+		
+		this.basicMaterial.opacity += 0.2;
+		
+		this.dataTexture.needsUpdate = true;
+		this.basicMaterial.needsUpdate = true;
+		
+	},
+	
+	darken: function() {
+		
+		for ( let i = 0; i < this.dataArray.length; i ++ ) {
+			
+			this.dataArray[ i ] = this.dataArrayCache[ i ];
+			
+		}
+		
+		this.dataArrayCache = undefined;
+		
+		this.basicMaterial.opacity -= 0.2;
+		
+		this.dataTexture.needsUpdate = true;
+		this.basicMaterial.needsUpdate = true;
+		
 	}
 
 };

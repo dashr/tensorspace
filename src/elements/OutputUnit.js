@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { ColorUtils } from "../utils/ColorUtils";
 import { TextFont } from "../assets/fonts/TextFont";
 import { TextHelper } from "../utils/TextHelper";
@@ -37,11 +38,15 @@ function OutputUnit( unitLength, output, initPositions, color, minOpacity, overv
 	this.isTextShown = false;
 
 	this.font = TextFont;
-
+	
+	this.material = undefined;
+	
 	this.outputText = undefined;
 	this.outputNeural = undefined;
 	this.outputGroup = undefined;
-
+	
+	this.value = undefined;
+	
 	this.init();
 
 }
@@ -61,11 +66,19 @@ OutputUnit.prototype = {
 			transparent: true
 
 		} );
+		
+		this.value = this.minOpacity;
+		
+		this.material = material;
 
 		let cube = new THREE.Mesh( boxGeometry, material );
 		cube.elementType = "outputNeural";
 		cube.hoverable = true;
 		cube.clickable = true;
+		cube.draggable = true;
+		cube.emissiveable = true;
+		
+		cube.context = this;
 
 		this.outputNeural = cube;
 
@@ -89,8 +102,10 @@ OutputUnit.prototype = {
 	},
 
 	updateVis: function( color ) {
-
-		this.outputNeural.material.opacity = color;
+		
+		this.value = color;
+		
+		this.outputNeural.material.opacity = this.value;
 		this.outputNeural.material.needsUpdate = true;
 
 	},
@@ -154,7 +169,7 @@ OutputUnit.prototype = {
 
 		let colors = ColorUtils.getAdjustValues( [ 0 ], this.minOpacity );
 
-		this.updateVis( colors );
+		this.updateVis( colors[ 0 ] );
 
 		if ( this.outputText !== undefined ) {
 
@@ -189,6 +204,22 @@ OutputUnit.prototype = {
 		this.position.z = pos.z;
 		this.outputGroup.position.set( pos.x, pos.y, pos.z );
 
+	},
+	
+	emissive: function() {
+		
+		let color = this.value + 0.2;
+		
+		this.updateVis( color );
+		
+	},
+	
+	darken: function() {
+		
+		let color = this.value - 0.2;
+		
+		this.updateVis( color );
+		
 	}
 
 };

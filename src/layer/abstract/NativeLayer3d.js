@@ -3,6 +3,7 @@
  * @author zchholmes / https://github.com/zchholmes
  */
 
+import * as THREE from "three";
 import { ChannelDataGenerator } from "../../utils/ChannelDataGenerator";
 import { ColorUtils } from "../../utils/ColorUtils";
 import { MapTransitionFactory } from "../../animation/MapTransitionTween";
@@ -114,7 +115,7 @@ NativeLayer3d.prototype = Object.assign( Object.create( NativeLayer.prototype ),
 	 */
 
 	/**
-	 * init() creates actual THREE.Object in NativeLayer3d, warp them into a group, and add it to THREE.js's scene.
+	 * init() creates actual THREE.Object in NativeLayer3d, warp them into a group, and add it to Model context.
 	 *
 	 * Model passes two parameters, center and actualDepth, to NativeLayer3d when call init() to initialize NativeLayer3d.
 	 *
@@ -139,6 +140,7 @@ NativeLayer3d.prototype = Object.assign( Object.create( NativeLayer.prototype ),
 			// Open layer and init one feature map (depth === 1) without initializing close button.
 
 			this.isOpen = true;
+			this.closeable = false;
 			this.initSegregationElements( this.openFmCenters );
 
 		} else {
@@ -163,9 +165,9 @@ NativeLayer3d.prototype = Object.assign( Object.create( NativeLayer.prototype ),
 
 		}
 
-		// Add wrapper object to THREE.js scene.
+		// Add wrapper object to THREE.js object.
 
-		this.scene.add( this.neuralGroup );
+		this.context.add( this.neuralGroup );
 
 		// Create relative line element.
 
@@ -697,6 +699,54 @@ NativeLayer3d.prototype = Object.assign( Object.create( NativeLayer.prototype ),
 		}
 
 	},
+	
+	emissive: function() {
+		
+		if ( !this.isEmissive ) {
+			
+			if ( this.isOpen ) {
+				
+				for ( let i = 0; i < this.segregationHandlers.length; i ++ ) {
+					
+					this.segregationHandlers[ i ].emissive();
+					
+				}
+				
+			} else {
+				
+				this.aggregationHandler.emissive();
+				
+			}
+			
+			this.isEmissive = true;
+			
+		}
+		
+	},
+	
+	darken: function() {
+		
+		if ( this.isEmissive ) {
+			
+			if ( this.isOpen ) {
+				
+				for ( let i = 0; i < this.segregationHandlers.length; i ++ ) {
+					
+					this.segregationHandlers[ i ].darken();
+					
+				}
+				
+			} else {
+				
+				this.aggregationHandler.darken();
+				
+			}
+			
+			this.isEmissive = false;
+			
+		}
+		
+	},
 
 	/**
 	 * ============
@@ -722,14 +772,14 @@ NativeLayer3d.prototype = Object.assign( Object.create( NativeLayer.prototype ),
 
 	/**
 	 * assemble() abstract method
-	 * Configure layer's index in model, calculate the shape and parameters based on previous layer.
+	 * calculate the shape and parameters based on previous layer or pre-defined shape.
 	 *
 	 * Override this function to get information from previous layer
 	 *
 	 * @param { int } layerIndex, this layer's order in model
 	 */
 
-	assemble: function( layerIndex ) {
+	assemble: function( layerIndex, layerLevel ) {
 
 	},
 

@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as TWEEN from '@tweenjs/tween.js';
 import { VariableLengthObject } from "../elements/VariableLengthObject";
 
 let QueueTransitionFactory = ( function() {
@@ -59,7 +60,12 @@ let QueueTransitionFactory = ( function() {
 
 			layer.neuralGroup.remove( variableLengthObject );
 			layer.initQueueElement();
-			layer.initCloseButton();
+			
+			if ( layer.hasCloseButton ) {
+				
+				layer.initCloseButton();
+				
+			}
 
 			if ( layer.paging ) {
 
@@ -138,8 +144,13 @@ let QueueTransitionFactory = ( function() {
 
 			layer.disposeQueueElement();
 			layer.neuralGroup.add( variableLengthObject );
-			layer.disposeCloseButton();
 
+			if ( layer.hasCloseButton ) {
+				
+				layer.disposeCloseButton();
+				
+			}
+			
 			if ( layer.paging ) {
 
 				layer.hidePaginationButton();

@@ -37,19 +37,6 @@ function UpSampling2d( config ) {
 	this.widthSize = undefined;
 	this.heightSize = undefined;
 
-	/**
-	 * Whether user directly define the layer shape.
-	 * Set "true" if UpSampling2d's shape is predefined by user.
-	 *
-	 * @type { boolean }
-	 */
-
-	this.isShapePredefined = false;
-
-	// Load user's UpSampling2d configuration.
-
-	this.loadLayerConfig( config );
-
 	this.layerType = "UpSampling2d";
 
 }
@@ -68,17 +55,15 @@ UpSampling2d.prototype = Object.assign( Object.create( NativeLayer3d.prototype )
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
-		this.depth = this.lastLayer.depth;
-
+	assemble: function() {
+		
+		// Load user's UpSampling2d configuration.
+		
+		this.loadLayerConfig( this.config );
+		
 		this.inputShape = this.lastLayer.outputShape;
 
 		// If user's do not define a specific 2d shape for feature map, infer layer output shape from input shape and config.
@@ -87,6 +72,7 @@ UpSampling2d.prototype = Object.assign( Object.create( NativeLayer3d.prototype )
 
 			this.width = this.lastLayer.width * this.widthSize;
 			this.height = this.lastLayer.height * this.heightSize;
+			this.depth = this.lastLayer.depth;
 
 		}
 
@@ -231,28 +217,30 @@ UpSampling2d.prototype = Object.assign( Object.create( NativeLayer3d.prototype )
 
 		if ( layerConfig !== undefined ) {
 
-			// "size" configuration is required.
+			if ( layerConfig.shape !== undefined ) {
 
-			if ( layerConfig.size !== undefined ) {
+				// Load user's predefined layer shape.
 
-				this.size = layerConfig.size;
-				this.widthSize = layerConfig.size[ 0 ];
-				this.heightSize = layerConfig.size[ 1 ];
+				this.isShapePredefined = true;
+				this.width = layerConfig.shape[ 0 ];
+				this.height = layerConfig.shape[ 1 ];
+				this.depth = layerConfig.shape[ 2 ];
 
 			} else {
 
-				console.error( "\"size\" property is required for UpSampling layer" );
+				// "size" configuration is required.
 
-			}
+				if ( layerConfig.size !== undefined ) {
 
-			// Load user's predefined 2d shape.
+					this.size = layerConfig.size;
+					this.widthSize = layerConfig.size[ 0 ];
+					this.heightSize = layerConfig.size[ 1 ];
 
-			if ( layerConfig.shape !== undefined ) {
+				} else {
 
-				this.isShapePredefined = true;
-				this.fmShape = layerConfig.shape;
-				this.width = layerConfig.shape[ 0 ];
-				this.height = layerConfig.shape[ 1 ];
+					console.error( "\"size\" property is required for UpSampling layer" );
+
+				}
 
 			}
 

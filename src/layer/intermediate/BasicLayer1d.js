@@ -17,10 +17,6 @@ function BasicLayer1d( config ) {
 
 	NativeLayer1d.call( this, config );
 
-	// Load user's BasicLayer1d configuration.
-
-	this.loadLayerConfig( config );
-
 	this.layerType = "BasicLayer1d";
 
 }
@@ -39,15 +35,15 @@ BasicLayer1d.prototype = Object.assign( Object.create( NativeLayer1d.prototype )
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	assemble: function() {
+		
+		// Load user's BasicLayer1d configuration.
+		
+		this.loadLayerConfig( this.config );
+		
 		// Unit length is the same as last layer, use unit length to calculate actualWidth which is used to create three.js object.
 
 		this.unitLength = this.lastLayer.unitLength;

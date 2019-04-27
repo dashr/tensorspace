@@ -56,7 +56,7 @@ NativeLayer.prototype = Object.assign( Object.create( Layer.prototype ), {
 		this.lineGroupHandler = new BasicLineGroup(
 
 			this,
-			this.scene,
+			this.context,
 			this.neuralGroup,
 			this.color,
 			this.minOpacity
@@ -110,7 +110,7 @@ NativeLayer.prototype = Object.assign( Object.create( Layer.prototype ), {
 	 * @param { int } layerIndex, this layer's order in model
 	 */
 
-	assemble: function( layerIndex ) {
+	assemble: function( layerIndex, layerLevel ) {
 
 	},
 

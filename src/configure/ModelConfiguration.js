@@ -2,7 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
-function ModelConfiguration(config ) {
+function ModelConfiguration( config ) {
 
 	this.layerInitStatus = false;
 	this.layerShape = "rect";
@@ -10,8 +10,11 @@ function ModelConfiguration(config ) {
 	this.relationSystem = true;
 	this.textSystem = true;
 	this.stats = false;
-	this.animationTimeRatio = 1;
+	this.animeTime = 2000;
 	this.minOpacity = 0.4;
+	this.predictDataShapes = undefined;
+	this.feedInputs = undefined;
+	this.hasCloseButton = true;
 	this.color = {
 
 		background: 0x000000,
@@ -132,11 +135,11 @@ function ModelConfiguration(config ) {
 
 		}
 
-		if ( config.animationTimeRatio !== undefined ) {
+		if ( config.animeTime !== undefined ) {
 
-			if ( config.animationTimeRatio > 0 ) {
+			if ( config.animeTime > 0 ) {
 
-				this.animationTimeRatio = config.animationTimeRatio;
+				this.animeTime = config.animeTime;
 
 			}
 
@@ -156,6 +159,24 @@ function ModelConfiguration(config ) {
 
 			this.stats = config.stats;
 
+		}
+
+		if ( config.predictDataShapes !== undefined ) {
+
+			this.predictDataShapes = config.predictDataShapes;
+
+		}
+
+		if ( config.feedInputs !== undefined ) {
+
+			this.feedInputs = config.feedInputs;
+
+		}
+		
+		if ( config.hasCloseButton !== undefined ) {
+			
+			this.hasCloseButton = config.hasCloseButton;
+			
 		}
 
 		if ( config.color !== undefined ) {

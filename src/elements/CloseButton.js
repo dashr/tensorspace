@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { TextureProvider } from "../utils/TextureProvider";
 
 function CloseButton( size, unitLength, position, color, minOpacity ) {
@@ -63,6 +64,7 @@ CloseButton.prototype = {
 		cylinderButton.position.set( this.position.x, this.position.y, this.position.z );
 		cylinderButton.clickable = true;
 		cylinderButton.hoverable = true;
+        cylinderButton.draggable = true;
 		cylinderButton.elementType = "closeButton";
 		cylinderButton.rotateY( - Math.PI / 2 );
 

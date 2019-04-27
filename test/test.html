@@ -2,14 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-
-    <script src="lib/three.min.js"></script>
-    <script src="lib/stats.min.js"></script>
-    <script src="lib/tween.min.js"></script>
-    <script src="lib/TrackballControls.js"></script>
-    <script src="lib/tf.min.js"></script>
-    <script src="../build/tensorspace.js"></script>
+    <title>Developer playground</title>
 
     <style>
 
@@ -21,20 +14,20 @@
         }
 
         #container {
-
-            /*margin-top: 100px;*/
-            /*margin-left: 100px;*/
-
-            /*width: 50%;*/
-            /*height: 50%;*/
-
-            /*position: relative;*/
-
             width: 100%;
             height: 100%;
+            background-color: #000;
         }
 
     </style>
+
+    <script src="../examples/lib/jquery.min.js"></script>
+    <script src="../examples/lib/three.min.js"></script>
+    <script src="../examples/lib/tween.min.js"></script>
+    <script src="../examples/lib/stats.min.js"></script>
+    <script src="../examples/lib/TrackballControls.js"></script>
+    <script src="../examples/lib/tf.min.js"></script>
+    <script src="../dist/tensorspace.js"></script>
 
 </head>
 <body>
@@ -43,36 +36,26 @@
 
 <script>
 
-	let container = document.getElementById("container");
+	let modelContainer = document.getElementById("container");
 
-    let model = new TSP.models.Sequential(container, {
-        layerShape: "rect",
-		layerInitStatus: "close"
-    });
+	let inputLayer = new TSP.layers.GreyscaleInput({ shape: [28, 28, 1] });
 
-    let input = new TSP.layers.GreyscaleInput({
-        shape: [28, 28]
-    });
+	let convLayer1 =  new TSP.layers.Conv2d({ kernelSize: 5, filters: 6, strides: 1, padding: "same" });
 
-    model.add(input);
+	convLayer1.apply(inputLayer);
 
-    let conv2d = new TSP.layers.Conv2d({
-       shape: [32, 32],
-       filters: 6
-    });
+	let convLayer2 =  new TSP.layers.Conv2d({ kernelSize: 5, filters: 6, strides: 1, padding: "same" });
 
-    model.add( conv2d );
+	convLayer2.apply(inputLayer);
 
-    let depthwiseConv = new TSP.layers.DepthwiseConv2d({
-		kernelSize: 5,
-		depthMultiplier: 1,
-		strides: 1,
-        padding: "same"
-    });
+	let addLayer = TSP.layers.Add([convLayer1, convLayer2]);
 
-    model.add(depthwiseConv);
+	let model = new TSP.models.Model(modelContainer, {
+		inputs: [inputLayer],
+		outputs: [addLayer]
+	});
 
-    model.init();
+	model.init();
 
 </script>
 

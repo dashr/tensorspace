@@ -4,7 +4,6 @@
  */
 
 import { CloseButton } from "../../elements/CloseButton";
-import { OpenTime, SeparateTime } from "../../utils/Constant";
 import { LayerTranslateFactory } from "../../animation/LayerTranslateTween";
 
 /**
@@ -18,12 +17,12 @@ import { LayerTranslateFactory } from "../../animation/LayerTranslateTween";
 function Layer( config ) {
 
 	/**
-	 * scene object of THREE.js.
+	 * model object of THREE.js.
 	 *
-	 * @type { THREE.Scene }
+	 * @type { THREE.Object }
 	 */
 
-	this.scene = undefined;
+	this.context = undefined;
 
 	/**
 	 * Order index number of the layer in model.
@@ -210,10 +209,9 @@ function Layer( config ) {
 	 *
 	 * @type { number }
 	 */
-
-	this.animationTimeRatio = 1;
-	this.openTime = OpenTime;
-	this.separateTime = SeparateTime;
+	
+	this.openTime = undefined;
+	this.separateTime = undefined;
 
 	/**
      * Whether the layer is a group or not.
@@ -250,6 +248,55 @@ function Layer( config ) {
 
 	this.layerType = undefined;
 
+	/**
+	 * The place for Layer in model, measured by y-axis in 3d scene.
+	 * For Sequential model:
+	 * 		the "layerLevel" will be the same as "layerIndex".
+	 * 		the layerLevel will be unique for all layers.
+	 * For Functional model:
+	 * 		the "layerLevel" may be the same for several layers.
+	 * 		these layers has different "layerIndex".
+	 *
+	 * @type { Int }
+	 */
+
+	this.layerLevel = undefined;
+
+	/**
+	 * True - layer has closeLayer() method, and this method can be called.
+	 * False - layer do not has closeLayer() method, or closeLayer() can not be called.
+	 * Default to True.
+	 *
+	 * @type { boolean }
+	 */
+
+	this.closeable = true;
+
+	/**
+	 * Layer's initial status, only take effect when layer is closeable.
+	 * For example, for input1d layer this attribute will not take effect.
+	 *
+	 * "open": show all feature maps, or neural lines, or grid lines.
+	 * "close": show aggregation when layer is initialized
+	 *
+	 * @type { String }
+	 */
+
+	this.initStatus = "close";
+
+	/**
+	 * Whether user directly define the layer shape.
+	 * Set "true" if Layer's shape is predefined by user.
+	 *
+	 * @type { boolean }
+	 */
+
+	this.isShapePredefined = false;
+	
+	this.config = config;
+	
+	this.isEmissive = false;
+
 	// Load layer config.
 
 	this.loadBasicLayerConfig( config );
@@ -273,10 +320,12 @@ Layer.prototype = {
 
 				if ( config.initStatus === "open" ) {
 
+					this.initStatus = "open";
 					this.isOpen = true;
 
 				} else if ( config.initStatus === "close" ) {
 
+					this.initStatus = "close";
 					this.isOpen = false;
 
 				} else {
@@ -315,16 +364,15 @@ Layer.prototype = {
 
 			}
 
-			if ( config.animationTimeRatio !== undefined ) {
+			if ( config.animeTime !== undefined ) {
 
-				if ( config.animationTimeRatio > 0 ) {
+				if ( config.animeTime > 0 ) {
 
-					this.animationTimeRatio = config.animationTimeRatio;
+					this.animeTime = config.animeTime;
+                    this.openTime *= this.animeTime;
+                    this.separateTime *= this.animeTime / 2;
 
 				}
-
-				this.openTime *= this.animationTimeRatio;
-				this.separateTime *= this.animationTimeRatio;
 
 			}
 
@@ -369,9 +417,19 @@ Layer.prototype = {
 			this.minOpacity = modelConfig.minOpacity;
 
 		}
-
-		this.openTime *= modelConfig.animationTimeRatio;
-		this.separateTime *= modelConfig.animationTimeRatio;
+		
+		if ( this.openTime === undefined ) {
+            
+            this.openTime = modelConfig.animeTime;
+            this.separateTime = modelConfig.animeTime / 2;
+			
+		}
+		
+		if ( modelConfig.hasCloseButton !== undefined ) {
+			
+			this.hasCloseButton = modelConfig.hasCloseButton;
+			
+		}
 
 	},
 
@@ -390,13 +448,13 @@ Layer.prototype = {
 	/**
 	 * setEnvironment(), hold ref of THREE.js scene and model
 	 *
-	 * @param { THREE.Object } scene, THREE.js scene.
+	 * @param { THREE.Object } context, THREE.js object.
 	 * @param { Model } model, the model object current layer be added.
 	 */
 
-	setEnvironment: function( scene, model ) {
+	setEnvironment: function( context, model ) {
 
-		this.scene = scene;
+		this.context = context;
 		this.model = model;
 
 	},
@@ -466,6 +524,50 @@ Layer.prototype = {
 	},
 
 	/**
+	 * reset(), reset layer to init status.
+	 *
+	 * Called when model's reset() method is called.
+	 */
+
+	reset: function() {
+
+		this.clear();
+
+		if ( this.closeable && this.initStatus === "close" ) {
+
+			this.closeLayer();
+
+		}
+
+		if ( !this.isOpen && this.initStatus === "open" ) {
+
+			this.openLayer();
+
+		}
+
+	},
+	
+	setPositionMetrics: function( layerIndex, layerLevel ) {
+		
+		this.layerIndex = layerIndex;
+		this.layerLevel = layerLevel;
+		
+	},
+	
+	setShape: function( shape ) {
+	
+		if ( this.config === undefined ) {
+			
+			this.config = {};
+			
+		}
+		
+		this.config.shape = shape;
+		this.outputShape = shape;
+		
+	},
+
+	/**
 	 * ============
 	 *
 	 * Functions below are abstract method for Layer.
@@ -476,7 +578,7 @@ Layer.prototype = {
 
 	/**
 	 * init() abstract method
-	 * Initialize THREE.Object in Layer, warp them into a group, and add to THREE.js scene.
+	 * Initialize THREE.Object in Layer, warp them into a group, and add to Model context.
 	 *
 	 * Model passes two parameters, center and actualDepth.
 	 *
@@ -490,14 +592,12 @@ Layer.prototype = {
 
 	/**
 	 * assemble() abstract method
-	 * Configure layer's index in model, calculate the shape and parameters based on previous layer.
+	 * calculate the shape and parameters based on previous layer or pre-defined shape.
 	 *
 	 * Override this function to get information from previous layer
-	 *
-	 * @param { int } layerIndex, this layer's order in model
 	 */
 
-	assemble: function( layerIndex ) {
+	assemble: function() {
 
 	},
 
@@ -614,7 +714,7 @@ Layer.prototype = {
 	},
 
 	/**
-	 * getBoundingWidth(), abstract layer
+	 * getBoundingWidth(), abstract method
 	 *
 	 * Override this function to provide layer's bounding width based on layer's status.
 	 *
@@ -625,6 +725,14 @@ Layer.prototype = {
 
 		return 100;
 
+	},
+	
+	emissive: function() {
+	
+	},
+	
+	darken: function() {
+	
 	}
 
 };

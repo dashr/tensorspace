@@ -20,12 +20,13 @@ function Conv2d( config ) {
 
 	/**
 	 * The dimension of the convolution window.
-	 * The 2d convolutional window is square.
+	 * The 2d convolutional window is rectangle.
+	 * Default to [ 1, 1 ].
 	 *
 	 * @type { int }
 	 */
 
-	this.kernelSize = undefined;
+	this.kernelSize = [ 1, 1 ];
 
 	/**
 	 * The depth of the layer output.
@@ -37,12 +38,13 @@ function Conv2d( config ) {
 
 	/**
 	 * The strides of the convolution.
-	 * Strides in both dimensions are equal.
+	 * Strides in both dimensions may be different.
+	 * Default to [ 1, 1 ].
 	 *
 	 * @type { int }
 	 */
 
-	this.strides = undefined;
+	this.strides = [ 1, 1 ];
 
 	/**
 	 * Padding mode.
@@ -52,35 +54,6 @@ function Conv2d( config ) {
 	 */
 
 	this.padding = "valid";
-
-	/**
-	 * Whether user directly define the layer shape.
-	 * Set "true" if Conv2d's shape is predefined by user.
-	 *
-	 * @type { boolean }
-	 */
-
-	this.isShapePredefined = false;
-
-	// Load user's Conv2d configuration.
-
-	this.loadLayerConfig( config );
-
-	// Init close feature map centers.
-
-	for ( let i = 0; i < this.depth; i ++ ) {
-
-		let center = {
-
-			x: 0,
-			y: 0,
-			z: 0
-
-		};
-
-		this.closeFmCenters.push( center );
-
-	}
 
 	this.layerType = "Conv2d";
 
@@ -100,15 +73,31 @@ Conv2d.prototype = Object.assign( Object.create( NativeLayer3d.prototype ), {
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function ( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	assemble: function() {
+		
+		// Load user's Conv2d configuration.
+		
+		this.loadLayerConfig( this.config );
+		
+		// Init close feature map centers.
+		
+		for ( let i = 0; i < this.depth; i ++ ) {
+			
+			let center = {
+				
+				x: 0,
+				y: 0,
+				z: 0
+				
+			};
+			
+			this.closeFmCenters.push( center );
+			
+		}
+		
 		this.inputShape = this.lastLayer.outputShape;
 
 		// If user's do not define a specific 2d shape for feature map, infer layer output shape from input shape and config.
@@ -121,15 +110,15 @@ Conv2d.prototype = Object.assign( Object.create( NativeLayer3d.prototype ), {
 
 				// ceil[ ( W - F + 1 ) / S ]
 
-				this.width = Math.ceil( ( this.inputShape[ 0 ] - this.kernelSize + 1 ) / this.strides );
-				this.height = Math.ceil( ( this.inputShape[ 1 ] - this.kernelSize + 1 ) / this.strides );
+				this.width = Math.ceil( ( this.inputShape[ 0 ] - this.kernelSize[ 0 ] + 1 ) / this.strides[ 0 ] );
+				this.height = Math.ceil( ( this.inputShape[ 1 ] - this.kernelSize[ 1 ] + 1 ) / this.strides[ 1 ] );
 
 			} else if ( this.padding === "same" ) {
 
 				// ceil( W / S )
 
-				this.width = Math.ceil( this.inputShape[ 0 ] / this.strides );
-				this.height = Math.ceil( this.inputShape[ 1 ] / this.strides );
+				this.width = Math.ceil( this.inputShape[ 0 ] / this.strides[ 0 ] );
+				this.height = Math.ceil( this.inputShape[ 1 ] / this.strides[ 1 ] );
 
 			}
 
@@ -245,50 +234,83 @@ Conv2d.prototype = Object.assign( Object.create( NativeLayer3d.prototype ), {
 
 		if ( layerConfig !== undefined ) {
 
-			// Optional configuration.
+			if ( layerConfig.shape !== undefined ) {
 
-			this.kernelSize = layerConfig.kernelSize;
-			this.strides = layerConfig.strides;
+				// Load user's predefined layer shape.
 
-			// "filters" configuration is required.
+				this.isShapePredefined = true;
+				this.width = layerConfig.shape[ 0 ];
+				this.height = layerConfig.shape[ 1 ];
 
-			if ( layerConfig.filters !== undefined ) {
-
-				this.filters = layerConfig.filters;
-				this.depth = layerConfig.filters;
+				this.filters = layerConfig.shape[ 2 ];
+				this.depth = layerConfig.shape[ 2 ];
 
 			} else {
 
-				console.error( "\"filters\" property is required for Conv2d layer." );
+				// "filters" configuration is required.
 
-			}
+				if ( layerConfig.filters !== undefined ) {
 
-			// Load user's predefined 2d shape.
-
-			if ( layerConfig.shape !== undefined ) {
-
-				this.isShapePredefined = true;
-				this.fmShape = layerConfig.shape;
-				this.width = this.fmShape[ 0 ];
-				this.height = this.fmShape[ 1 ];
-
-			}
-
-			// Load padding mode, accept two mode: "valid" and "same", support both uppercase and lowercase.
-
-			if ( layerConfig.padding !== undefined ) {
-
-				if ( layerConfig.padding.toLowerCase() === "valid" ) {
-
-					this.padding = "valid";
-
-				} else if ( layerConfig.padding.toLowerCase() === "same" ) {
-
-					this.padding = "same";
+					this.filters = layerConfig.filters;
+					this.depth = layerConfig.filters;
 
 				} else {
 
-					console.error( "\"padding\" property do not support for " + layerConfig.padding + ", use \"valid\" or \"same\" instead." );
+					console.error( "\"filters\" property is required for Conv2d layer." );
+
+				}
+
+				// Optional configuration.
+
+				if ( layerConfig.kernelSize !== undefined ) {
+
+					if ( layerConfig.kernelSize instanceof Array ) {
+
+						this.kernelSize[ 0 ] = layerConfig.kernelSize[ 0 ];
+						this.kernelSize[ 1 ] = layerConfig.kernelSize[ 1 ];
+
+					} else {
+
+						this.kernelSize[ 0 ] = layerConfig.kernelSize;
+						this.kernelSize[ 1 ] = layerConfig.kernelSize;
+
+					}
+
+				}
+
+				if ( layerConfig.strides !== undefined ) {
+
+					if ( layerConfig.strides instanceof Array ) {
+
+						this.strides[ 0 ] = layerConfig.strides[ 0 ];
+						this.strides[ 1 ] = layerConfig.strides[ 1 ];
+
+					} else {
+
+						this.strides[ 0 ] = layerConfig.strides;
+						this.strides[ 1 ] = layerConfig.strides;
+
+					}
+
+				}
+
+				if ( layerConfig.padding !== undefined ) {
+
+					// Load padding mode, accept two mode: "valid" and "same", support both uppercase and lowercase.
+
+					if ( layerConfig.padding.toLowerCase() === "valid" ) {
+
+						this.padding = "valid";
+
+					} else if ( layerConfig.padding.toLowerCase() === "same" ) {
+
+						this.padding = "same";
+
+					} else {
+
+						console.error( "\"padding\" property do not support for " + layerConfig.padding + ", use \"valid\" or \"same\" instead." );
+
+					}
 
 				}
 

@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as tf from "@tensorflow/tfjs";
 import { Loader } from './Loader';
 import { TfPredictor } from "../predictor/TfPredictor";
 
@@ -26,16 +27,7 @@ function TfLoader( model, config ) {
 	 * @type { url }
 	 */
 
-	this.modelUrl = undefined;
-
-	/**
-	 * tensorflow weight's url (.json file's url).
-	 * Important parameter for TfLoader to get tensorflow model.
-	 *
-	 * @type { url }
-	 */
-
-	this.weightUrl = undefined;
+	this.url = undefined;
 
 	/**
 	 * User's predefined outputsName list.
@@ -80,9 +72,25 @@ TfLoader.prototype = Object.assign( Object.create( Loader.prototype ), {
 
 	load: async function() {
 
-		const loadedModel = await tf.loadFrozenModel( this.modelUrl, this.weightUrl );
+		let loadedModel;
+		
+		if ( this.outputsName !== undefined ) {
+			
+			loadedModel = await tf.loadGraphModel( this.url, this.tfjsLoadOption );
+			
+		} else {
+			
+			loadedModel = await tf.loadLayersModel( this.url, this.tfjsLoadOption );
+			
+		}
 
 		this.model.resource = loadedModel;
+
+		if ( this.model.modelType === "Model" ) {
+
+			this.model.outputsOrder = loadedModel.outputNames;
+
+		}
 
 		this.setPredictor();
 
@@ -124,27 +132,15 @@ TfLoader.prototype = Object.assign( Object.create( Loader.prototype ), {
 
 	loadTfConfig: function( loaderConfig ) {
 
-		// "modelUrl" configuration is required.
+		// "url" configuration is required.
 
-		if ( loaderConfig.modelUrl !== undefined ) {
+		if ( loaderConfig.url !== undefined ) {
 
-			this.modelUrl = loaderConfig.modelUrl;
-
-		} else {
-
-			console.error( "\"modelUrl\" property is required to load tensorflow model." );
-
-		}
-
-		// "weightUrl" configuration is required.
-
-		if ( loaderConfig.weightUrl !== undefined ) {
-
-			this.weightUrl = loaderConfig.weightUrl;
+			this.url = loaderConfig.url;
 
 		} else {
 
-			console.error( "\"weightUrl\" property is required to load tensorflow model." );
+			console.error( "\"url\" property is required to load tensorflow model." );
 
 		}
 

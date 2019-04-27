@@ -52,7 +52,7 @@
         <script src="../lib/tween.min.js"></script>
         <script src="../lib/TrackballControls.js"></script>
         <script src="../lib/tf.min.js"></script>
-        <script src="../../build/tensorspace.js"></script>
+        <script src="../../dist/tensorspace.js"></script>
 
         <script>
 
@@ -60,138 +60,42 @@
 
             let model = new TSP.models.Sequential( modelContainer, {
 
-				stats: true
+				stats: true,
+                animeTime: 200
 
 			}  );
 
-            model.add( new TSP.layers.RGBInput( {
+            model.add( new TSP.layers.RGBInput() );
 
-                shape: [ 416, 416, 3 ]
+            model.add( new TSP.layers.Conv2d() );
 
-            } ) );
+            model.add( new TSP.layers.Pooling2d() );
 
-            model.add( new TSP.layers.Conv2d( {
+            model.add( new TSP.layers.Conv2d() );
 
-                kernelSize: 3,
-                filters: 16,
-                strides: 1,
-                padding: "same"
+            model.add( new TSP.layers.Pooling2d() );
 
-            } ) );
+            model.add( new TSP.layers.Conv2d() );
 
-            model.add( new TSP.layers.Pooling2d( {
+            model.add( new TSP.layers.Pooling2d() );
 
-                poolSize: [ 2, 2 ],
-                strides: [ 2, 2 ]
+            model.add( new TSP.layers.Conv2d() );
 
-            } ) );
+            model.add( new TSP.layers.Pooling2d() );
 
-            model.add( new TSP.layers.Conv2d( {
+            model.add( new TSP.layers.Conv2d() );
 
-                kernelSize: 3,
-                filters: 32,
-                strides: 1,
-                padding: "same"
+            model.add( new TSP.layers.Pooling2d() );
 
-            } ) );
+            model.add( new TSP.layers.Conv2d() );
 
-            model.add( new TSP.layers.Pooling2d( {
+            model.add( new TSP.layers.Pooling2d() );
 
-                poolSize: [ 2, 2 ],
-                strides: [ 2, 2 ]
+            model.add( new TSP.layers.Conv2d() );
 
-            } ) );
+            model.add( new TSP.layers.Conv2d() );
 
-            model.add( new TSP.layers.Conv2d( {
-
-                kernelSize: 3,
-                filters: 64,
-                strides: 1,
-                padding: "same"
-
-            } ) );
-
-            model.add( new TSP.layers.Pooling2d( {
-
-                poolSize: [ 2, 2 ],
-                strides: [ 2, 2 ]
-
-            } ) );
-
-            model.add( new TSP.layers.Conv2d( {
-
-                kernelSize: 3,
-                filters: 128,
-                strides: 1,
-                padding: "same"
-
-            } ) );
-
-            model.add( new TSP.layers.Pooling2d( {
-
-                poolSize: [ 2, 2 ],
-                strides: [ 2, 2 ]
-
-            } ) );
-
-            model.add( new TSP.layers.Conv2d( {
-
-                kernelSize: 3,
-                filters: 256,
-                strides: 1,
-                padding: "same"
-
-            } ) );
-
-            model.add( new TSP.layers.Pooling2d( {
-
-                poolSize: [ 2, 2 ],
-                strides: [ 2, 2 ]
-
-            } ) );
-
-            model.add( new TSP.layers.Conv2d( {
-
-                kernelSize: 3,
-                filters: 512,
-                strides: 1,
-                padding: "same"
-
-            } ) );
-
-            model.add( new TSP.layers.Pooling2d( {
-
-                poolSize: [ 2, 2 ],
-                strides: [ 1, 1 ],
-                padding: "same"
-
-            } ) );
-
-            model.add( new TSP.layers.Conv2d( {
-
-                kernelSize: 3,
-                filters: 1024,
-                strides: 1,
-                padding: "same"
-
-            } ) );
-
-            model.add( new TSP.layers.Conv2d( {
-
-                kernelSize: 3,
-                filters: 512,
-                strides: 1,
-                padding: "same"
-
-            } ) );
-
-            model.add( new TSP.layers.Conv2d( {
-
-                kernelSize: 1,
-                filters: 125,
-                strides: 1
-
-            } ) );
+            model.add( new TSP.layers.Conv2d() );
 
             let yoloGrid = new TSP.layers.YoloGrid( {
 
@@ -203,11 +107,17 @@
                     "diningtable", "dog", "horse", "motorbike", "person",
                     "pottedplant", "sheep", "sofa", "train", "tvmonitor" ],
 
-                // defualt is 0.5
-                scoreThreshold: 0.7,
+                // default is 0.5
+                scoreThreshold: 0.3,
+
+                // default is 0.3
+                iouThreshold: 0.3,
 
                 // default is true
                 isDrawFiveBoxes: true,
+
+                // default is true
+                isNMS: true,
 
                 onCeilClicked: onYoloCeilClicked
 
@@ -222,8 +132,7 @@
             model.load( {
 
                 type: "tensorflow",
-                modelUrl: "./yolov2-tiny-voc/tensorflowjs_model.pb",
-                weightUrl: "./yolov2-tiny-voc/weights_manifest.json",
+                url: "./yolov2-tiny-voc/model.json",
                 outputsName: [ "Maximum", "MaxPool", "Maximum_1", "MaxPool_1", "Maximum_2",
                               "MaxPool_2", "Maximum_3", "MaxPool_3", "Maximum_4", "MaxPool_4",
                               "Maximum_5", "MaxPool_5", "Maximum_6", "Maximum_7", "add_8" ],
@@ -233,7 +142,7 @@
 
 				$.ajax( {
 
-					url: "./data/dog.json",
+					url: "./data/person.json",
 					type: 'GET',
 					async: true,
 					dataType: 'json',

@@ -2,6 +2,8 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as tf from "@tensorflow/tfjs";
+
 /**
  * Abstract Class, can not be initialized by TensorSpace user.
  * Handle predict for model.
@@ -29,7 +31,7 @@ function Predictor( model, config ) {
 	 * @type { boolean }
 	 */
 
-	this.multiInputs = false;
+	this.inputNum = undefined;
 
 	/**
 	 * Input shapes if model has multiple inputs.
@@ -38,14 +40,6 @@ function Predictor( model, config ) {
 	 */
 
 	this.inputShapes = undefined;
-
-	/**
-	 * Input shape if model has only one input.
-	 *
-	 * @type { Array }
-	 */
-
-	this.inputShape = undefined;
 
 	// Load Predictor's basic configuration.
 
@@ -63,45 +57,41 @@ Predictor.prototype = {
 
 	loadPredictorConfig: function( config ) {
 
-		// Add inputShape or inputShapes from config.
+		let inputShapes = [];
 
-		if ( this.model.modelType === "Sequential" ) {
+		if ( this.model.configuration.predictDataShapes !== undefined ) {
 
-			// In Sequential, has two input type.
+			let shapes = this.model.configuration.predictDataShapes;
 
-			if ( config.multiInputs !== undefined && config.multiInputs === true ) {
+			for ( let i = 0; i < shapes.length; i ++ ) {
 
-				// Multiple inputs
-
-				this.multiInputs = true;
-
-				this.inputShapes = config.inputShapes;
-
-			} else {
-
-				// Single input.
-
-				this.inputShape = this.model.layers[ 0 ].outputShape;
+				inputShapes.push( [ 1 ].concat( shapes[ i ] ) );
 
 			}
 
 		} else {
 
-			// In Model, multiple inputs.
+			let loadedModel = this.model.resource;
 
-			this.multiInputs = true;
+			let inputs = loadedModel.inputs;
 
-			let inputShapes = [];
+			this.inputNum = inputs.length;
 
-			for ( let i = 0; i < this.model.inputs.length; i ++ ) {
+			for ( let i = 0; i < inputs.length; i ++ ) {
 
-				inputShapes.push( this.model.inputs[ i ] );
+				let inputShape = inputs[ i ].shape;
+
+				// Support predict one input data at a time, set batch size to be 1.
+
+				inputShape[ 0 ] = 1;
+
+				inputShapes.push( inputShape );
 
 			}
 
-			this.inputShapes = inputShapes;
-
 		}
+
+		this.inputShapes = inputShapes;
 
 	},
 
@@ -114,34 +104,19 @@ Predictor.prototype = {
 
 	createInputTensor: function( data ) {
 
-		if ( this.multiInputs ) {
+		let inputData;
 
-			return this.createInputTensorList( data, this.inputShapes );
+		if ( this.model.modelType === "Sequential" && this.inputNum == 1 ) {
+
+			inputData = [ data ];
 
 		} else {
 
-			return this.createOneInputTensor( data, this.inputShape );
+			inputData = data;
 
 		}
 
-	},
-
-	/**
-	 * createOneInputTensor(), transfer an data array into a Tensor based on tensor shape.
-	 *
-	 * @param data, a list of input data, for example, [ 0.1, 0.15 ......, 0.2 ]
-	 * @param inputShape
-	 * @returns { tf.Tensor }
-	 */
-
-	createOneInputTensor: function( data, inputShape ) {
-
-		// Support predict one input data at a time, set batch size to be 1.
-
-		let batchSize = [ 1 ];
-		let predictTensorShape = batchSize.concat( inputShape );
-
-		return tf.tensor( data, predictTensorShape );
+		return this.createInputTensorList( inputData, this.inputShapes );
 
 	},
 
@@ -150,7 +125,7 @@ Predictor.prototype = {
 	 *
 	 * @param data, input data list, for example, [[...], [...], ..., [...]]
 	 * @param inputShapes
-	 * @returns { tf.Tensor }
+	 * @returns { tf.Tensor[] }
 	 */
 
 	createInputTensorList: function( data, inputShapes ) {
@@ -159,7 +134,7 @@ Predictor.prototype = {
 
 		for ( let i = 0; i < inputShapes.length; i ++ ) {
 
-			tensorList.push( this.createOneInputTensor( data[ i ], inputShapes[ i ] ) );
+			tensorList.push( tf.tensor( data[ i ], inputShapes[ i ] ));
 
 		}
 

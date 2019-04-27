@@ -1,6 +1,11 @@
+/**
+ * @author syt123450 / https://github.com/syt123450
+ */
+
+import * as THREE from "three";
 import { OutputUnit } from "./OutputUnit";
 import { OutputNeuralPosGenerator } from "../utils/OutputNeuralPosGenerator";
-import {ColorUtils} from "../utils/ColorUtils";
+import { ColorUtils } from "../utils/ColorUtils";
 
 function OutputQueue( units, outputs, unitLength, color, minOpacity, initStatus, overview ) {
 
@@ -94,7 +99,7 @@ OutputQueue.prototype = {
 
 		for ( let i = 0; i < colors.length; i ++ ) {
 
-			this.outputUnitList[ i ].updateVis( [ colors[ i ] ] );
+			this.outputUnitList[ i ].updateVis( colors[ i ] );
 
 		}
 
@@ -167,6 +172,26 @@ OutputQueue.prototype = {
 
 		}
 
+	},
+	
+	emissive: function() {
+		
+		for ( let i = 0; i < this.outputUnitList.length; i ++ ) {
+			
+			this.outputUnitList[ i ].emissive();
+			
+		}
+		
+	},
+	
+	darken: function() {
+		
+		for ( let i = 0; i < this.outputUnitList.length; i ++ ) {
+			
+			this.outputUnitList[ i ].darken();
+			
+		}
+		
 	}
 
 };

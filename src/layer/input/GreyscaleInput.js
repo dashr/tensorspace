@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { NativeLayer } from '../abstract/NativeLayer';
 import { FeatureMap } from "../../elements/FeatureMap";
 import { ColorUtils } from "../../utils/ColorUtils";
@@ -38,10 +39,6 @@ function GreyscaleInput( config ) {
 	 */
 	this.depth = 1;
 
-	// Load user's GreyscaleInput configuration.
-
-	this.loadLayerConfig( config );
-
 	/**
 	 * As GreyscaleInput is the first layer model, actualWidth is defined as a const.
 	 * Use actualWidth to calculate actualHeight.
@@ -49,8 +46,8 @@ function GreyscaleInput( config ) {
 	 * @type { double }
 	 */
 
-	this.actualWidth = ModelInitWidth;
-	this.actualHeight = ModelInitWidth / this.width * this.height;
+	this.actualWidth = undefined;
+	this.actualHeight = undefined;
 
 	/**
 	 * Calculate unitLength for latter layers.
@@ -58,7 +55,7 @@ function GreyscaleInput( config ) {
 	 * @type { double }
 	 */
 
-	this.unitLength = this.actualWidth / this.width;
+	this.unitLength = undefined;
 
 	/**
 	 * Set this attribute for latter layer,
@@ -83,6 +80,8 @@ function GreyscaleInput( config ) {
 	 */
 
 	this.autoOutputDetect = false;
+
+	this.closeable = false;
 
 	this.layerDimension = 2;
 
@@ -126,22 +125,36 @@ GreyscaleInput.prototype = Object.assign( Object.create( NativeLayer.prototype )
 
 		this.initAggregationElement();
 
-		// Add the wrapper object to the actual THREE.js scene.
+		// Add the wrapper object to the actual THREE.js object.
 
-		this.scene.add( this.neuralGroup );
+		this.context.add( this.neuralGroup );
 
 	},
-
-	/**
-	 * assemble() configure layer's index in model.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
-	 */
-
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	
+	assemble: function() {
+		
+		// Load user's GreyscaleInput configuration.
+		
+		this.loadLayerConfig( this.config );
+		
+		/**
+		 * As GreyscaleInput is the first layer model, actualWidth is defined as a const.
+		 * Use actualWidth to calculate actualHeight.
+		 *
+		 * @type { double }
+		 */
+		
+		this.actualWidth = ModelInitWidth;
+		this.actualHeight = ModelInitWidth / this.width * this.height;
+		
+		/**
+		 * Calculate unitLength for latter layers.
+		 *
+		 * @type { double }
+		 */
+		
+		this.unitLength = this.actualWidth / this.width;
+		
 	},
 
 	/**
@@ -281,6 +294,28 @@ GreyscaleInput.prototype = Object.assign( Object.create( NativeLayer.prototype )
 
 		return this.actualWidth;
 
+	},
+	
+	emissive: function() {
+		
+		if ( !this.isEmissive ) {
+			
+			this.aggregationHandler.emissive();
+			this.isEmissive = true;
+			
+		}
+		
+	},
+	
+	darken: function() {
+		
+		if ( this.isEmissive ) {
+			
+			this.aggregationHandler.darken();
+			this.isEmissive = false;
+			
+		}
+		
 	},
 
 	/**

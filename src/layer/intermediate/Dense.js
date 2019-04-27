@@ -17,10 +17,6 @@ function Dense( config ) {
 
 	NativeLayer1d.call( this, config );
 
-	// Load user's Dense configuration.
-
-	this.loadLayerConfig( config );
-
 	this.layerType = "Dense";
 
 }
@@ -39,15 +35,15 @@ Dense.prototype = Object.assign( Object.create( NativeLayer1d.prototype ), {
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	assemble: function() {
+		
+		// Load user's Dense configuration.
+		
+		this.loadLayerConfig( this.config );
+		
 		// Unit length is the same as last layer, use unit length to calculate actualWidth which is used to create three.js object.
 
 		this.unitLength = this.lastLayer.unitLength;
@@ -153,25 +149,37 @@ Dense.prototype = Object.assign( Object.create( NativeLayer1d.prototype ), {
 
 		if ( layerConfig !== undefined ) {
 
-			// "units" configuration is required.
+			if ( layerConfig.shape !== undefined ) {
 
-			if ( layerConfig.units !== undefined ) {
+				// Load user's predefined shape.
 
-				this.width = layerConfig.units;
-
-				// Dense layer's outputShape has one dimension, that's why Dense layer inherits from abstract layer "NativeLayer1d".
-
-				this.outputShape = [ layerConfig.units ];
-
-				if ( this.paging ) {
-
-					this.totalSegments = Math.ceil( this.width / this.segmentLength );
-
-				}
+				this.isShapePredefined = true;
+				this.width = layerConfig.shape[ 0 ];
+				this.outputShape = [ this.width ];
 
 			} else {
 
-				console.error( "The \"unit\" property is required for dense layer." );
+				// "units" configuration is required.
+
+				if ( layerConfig.units !== undefined ) {
+					
+					this.width = layerConfig.units;
+
+					// Dense layer's outputShape has one dimension, that's why Dense layer inherits from abstract layer "NativeLayer1d".
+
+					this.outputShape = [ layerConfig.units ];
+					
+					if ( this.paging ) {
+
+						this.totalSegments = Math.ceil( this.width / this.segmentLength );
+
+					}
+
+				} else {
+
+					console.error( "The \"unit\" property is required for dense layer." );
+
+				}
 
 			}
 

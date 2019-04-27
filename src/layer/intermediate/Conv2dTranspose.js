@@ -20,12 +20,13 @@ function Conv2dTranspose( config ) {
 
 	/**
 	 * The dimension of the convolution window.
-	 * The 2d convolutional window is square.
+	 * The 2d convolutional window is rectangle.
+	 * Default to [ 1, 1 ].
 	 *
 	 * @type { int }
 	 */
 
-	this.kernelSize = undefined;
+	this.kernelSize = [ 1, 1 ];
 
 	/**
 	 * The depth of the layer output.
@@ -37,21 +38,13 @@ function Conv2dTranspose( config ) {
 
 	/**
 	 * The strides of the convolution.
-	 * Strides in both dimensions are equal.
+	 * Strides in both dimensions may be different.
+	 * Default to [ 1, 1 ].
 	 *
 	 * @type { int }
 	 */
 
-	this.strides = undefined;
-
-	/**
-	 * 2d feature map shape, stored as array.
-	 * For example, [20, 20]
-	 *
-	 * @type { Array }
-	 */
-
-	this.fmShape = undefined;
+	this.strides = [ 1, 1 ];
 
 	/**
 	 * Padding mode.
@@ -61,26 +54,6 @@ function Conv2dTranspose( config ) {
 	 */
 
 	this.padding = "valid";
-
-	// Load user's Conv2dTranspose configuration.
-
-	this.loadLayerConfig( config );
-
-	// Init feature maps close feature centers.
-
-	for ( let i = 0; i < this.depth; i ++ ) {
-
-		let center = {
-
-			x: 0,
-			y: 0,
-			z: 0
-
-		};
-
-		this.closeFmCenters.push( center );
-
-	}
 
 	this.layerType = "Conv2dTranspose";
 
@@ -100,32 +73,52 @@ Conv2dTranspose.prototype = Object.assign( Object.create( NativeLayer3d.prototyp
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	assemble: function() {
+		
+		// Load user's Conv2dTranspose configuration.
+		
+		this.loadLayerConfig( this.config );
+		
+		// Init feature maps close feature centers.
+		
+		for ( let i = 0; i < this.depth; i ++ ) {
+			
+			let center = {
+				
+				x: 0,
+				y: 0,
+				z: 0
+				
+			};
+			
+			this.closeFmCenters.push( center );
+			
+		}
+		
 		this.inputShape = this.lastLayer.outputShape;
 
-		// infer layer output shape from input shape and config.
+		if ( !this.isShapePredefined ) {
 
-		if ( this.padding === "same" ) {
+			// infer layer output shape from input shape and config.
 
-			// W * S
+			if ( this.padding === "same" ) {
 
-			this.width = this.inputShape[ 0 ] * this.strides[ 0 ];
-			this.height = this.inputShape[ 1 ] * this.strides[ 1 ];
+				// W * S
 
-		} else if ( this.padding === "valid" ) {
+				this.width = this.inputShape[ 0 ] * this.strides[ 0 ];
+				this.height = this.inputShape[ 1 ] * this.strides[ 1 ];
 
-			// ( W - 1 ) * S + F
+			} else if ( this.padding === "valid" ) {
 
-			this.width = ( this.inputShape[ 0 ] - 1 ) * this.strides + this.kernelSize;
-			this.height = ( this.inputShape[ 1 ] - 1 ) * this.strides + this.kernelSize;
+				// ( W - 1 ) * S + F
+
+				this.width = ( this.inputShape[ 0 ] - 1 ) * this.strides[ 0 ] + this.kernelSize[ 0 ];
+				this.height = ( this.inputShape[ 1 ] - 1 ) * this.strides[ 1 ] + this.kernelSize[ 1 ];
+
+			}
 
 		}
 
@@ -239,48 +232,83 @@ Conv2dTranspose.prototype = Object.assign( Object.create( NativeLayer3d.prototyp
 
 		if ( layerConfig !== undefined ) {
 
-			// "filters" configuration is required.
+			if ( layerConfig.shape !== undefined ) {
 
-			if ( layerConfig.filters !== undefined ) {
+				// Load user's predefined layer shape.
 
-				this.filters = layerConfig.filters;
-				this.depth = layerConfig.filters;
+				this.isShapePredefined = true;
+				this.width = layerConfig.shape[ 0 ];
+				this.height = layerConfig.shape[ 1 ];
+
+				this.filters = layerConfig.shape[ 2 ];
+				this.depth = layerConfig.shape[ 2 ];
 
 			} else {
 
-				console.error( "\"filters\" property is required for Conv2dTranspose layer." );
+				// "filters" configuration is required.
 
-			}
+				if ( layerConfig.filters !== undefined ) {
 
-			// Optional configuration.
-
-			if ( layerConfig.kernelSize !== undefined ) {
-
-				this.kernelSize = layerConfig.kernelSize;
-
-			}
-
-			if ( layerConfig.strides !== undefined ) {
-
-				this.strides = layerConfig.strides;
-
-			}
-
-			// Load padding mode, accept two mode: "valid" and "same", support both uppercase and lowercase.
-
-			if ( layerConfig.padding !== undefined ) {
-
-				if ( layerConfig.padding.toLowerCase() === "same" ) {
-
-					this.padding = "same";
-
-				} else if ( layerConfig.padding.toLowerCase() === "valid" ) {
-
-					this.padding = "valid";
+					this.filters = layerConfig.filters;
+					this.depth = layerConfig.filters;
 
 				} else {
 
-					console.error( "\"padding\" property do not support for " + layerConfig.padding + ", use \"valid\" or \"same\" instead." );
+					console.error( "\"filters\" property is required for Conv2dTranspose layer." );
+
+				}
+
+				// Optional configuration.
+
+				if ( layerConfig.kernelSize !== undefined ) {
+
+					if ( layerConfig.kernelSize instanceof Array ) {
+
+						this.kernelSize[ 0 ] = layerConfig.kernelSize[ 0 ];
+						this.kernelSize[ 1 ] = layerConfig.kernelSize[ 1 ];
+
+					} else {
+
+						this.kernelSize[ 0 ] = layerConfig.kernelSize;
+						this.kernelSize[ 0 ] = layerConfig.kernelSize;
+
+					}
+
+				}
+
+				if ( layerConfig.strides !== undefined ) {
+
+					if ( layerConfig.strides instanceof Array ) {
+
+						this.strides[ 0 ] = layerConfig.strides[ 0 ];
+						this.strides[ 1 ] = layerConfig.strides[ 1 ];
+
+					} else {
+
+						this.strides[ 0 ] = layerConfig.strides;
+						this.strides[ 1 ] = layerConfig.strides;
+
+					}
+
+				}
+
+				// Load padding mode, accept two mode: "valid" and "same", support both uppercase and lowercase.
+
+				if ( layerConfig.padding !== undefined ) {
+
+					if ( layerConfig.padding.toLowerCase() === "same" ) {
+
+						this.padding = "same";
+
+					} else if ( layerConfig.padding.toLowerCase() === "valid" ) {
+
+						this.padding = "valid";
+
+					} else {
+
+						console.error( "\"padding\" property do not support for " + layerConfig.padding + ", use \"valid\" or \"same\" instead." );
+
+					}
 
 				}
 

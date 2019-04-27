@@ -2,6 +2,8 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
+
 function YoloOutputUnit( unitLength, initPosition, color, minOpacity ) {
 
 	this.unitLength = unitLength;
@@ -45,6 +47,7 @@ YoloOutputUnit.prototype = {
 		cube.elementType = "outputNeural";
 		cube.clickable = true;
 		cube.hoverable = true;
+		cube.draggable = true;
 
 		cube.position.set(
 

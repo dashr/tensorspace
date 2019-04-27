@@ -2,65 +2,61 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
-import { MergedLayer3d } from "../layer/abstract/MergedLayer3d";
+import { MergeProxy } from './proxy/MergeProxy';
+
+/**
+ * Exported as a Factory method for TensorSpace user to use.
+ * Performs element-wise multiply on an array of layers, return an "multiplyLayer" which is a TensorSpace layer object.
+ * The "multiplyLayer" will have the same "outputShape" as layers in "layerList".
+ * All layers in "layerList" must have the same layer dimension.
+ *
+ * This method can be used to perform multiply operation on 3d layers.
+ * In this case, the returned "multiplyLayer" is a 3 dimension Layer.
+ * For example:
+ * ```javascript
+ * let conv2d1 = new TSP.layers.Conv2d( { ...config } );
+ * let conv2d2 = new TSP.layers.Conv2d( { ...config } );
+ * let multiplyLayer = TSP.layers.Multiply( [ conv2d1, conv2d2 ], { ...config } );
+ * // print "3" in console
+ * console.log( multiplyLayer.outputShape.length );
+ * ```
+ *
+ * This method can be used to perform multiply operation on 2d layers.
+ * In this case, the returned "multiplyLayer" is a 2 dimension Layer.
+ * For example:
+ * ```javascript
+ * let conv1d1 = new TSP.layers.Conv1d( { ...config } );
+ * let conv1d2 = new TSP.layers.Conv1d( { ...config } );
+ * let multiplyLayer = TSP.layers.Multiply( [ conv1d1, conv1d2 ], { ...config } );
+ * // print "2" in console
+ * console.log( multiplyLayer.outputShape.length );
+ * ```
+ *
+ * This method can be used to perform multiply operation on 1d layers.
+ * In this case, the returned "multiplyLayer" is an 1 dimension Layer.
+ * For example:
+ * ```javascript
+ * let dense1 = new TSP.layers.Dense( { ...config } );
+ * let dense2 = new TSP.layers.Dense( { ...config } );
+ * let multiplyLayer = TSP.layers.Multiply( [ dense1, dense2 ], { ...config } );
+ * // print "1" in console
+ * console.log( multiplyLayer.outputShape.length );
+ * ```
+ *
+ * @param layerList, array of TensorSpace layers. (layerList.length > 0)
+ * @param config, user's config for multiply function
+ * @constructor
+ */
 
 function Multiply( layerList, config ) {
 
 	let operatorType = "multiply";
+	
+	// Create a merged Layer proxy, the actual layer in proxy based on input layer list and config for multiply operation.
 
-	validate( layerList );
+	let multiplyLayer = new MergeProxy( operatorType, layerList, config );
 
-	return createMergedLayer( layerList, config );
-
-	function validate( layerList ) {
-
-		let depth;
-
-		if ( layerList.length > 0 ) {
-
-			depth = layerList[ 0 ].layerDimension;
-
-		} else {
-
-			console.error( "Merge Layer missing elements." );
-
-		}
-
-		for ( let i = 0; i < layerList.length; i ++ ) {
-
-			if ( layerList[ i ].layerDimension !== depth ) {
-
-				console.error( "Can not add layer with different depth." );
-
-			}
-
-		}
-
-	}
-
-	function createMergedLayer( layerList, userConfig ) {
-
-		if ( layerList[ 0 ].layerDimension === 1 ) {
-
-		} else if ( layerList[ 0 ].layerDimension === 2 ) {
-
-		} else if ( layerList[ 0 ].layerDimension === 3 ) {
-
-			return new MergedLayer3d( {
-
-				operator: operatorType,
-				mergedElements: layerList,
-				userConfig: userConfig
-
-			} );
-
-		} else {
-
-			console.error( "Do not support layer add operation more than 4 dimension." );
-
-		}
-
-	}
+	return multiplyLayer;
 
 }
 

@@ -3,36 +3,42 @@
  * @author zchholmes / https://github.com/zchholmes
  */
 
-import { SceneInitializer } from '../scene/SceneInitializer';
+import * as THREE from "three";
 import { TfjsLoader } from '../loader/TfjsLoader';
 import { KerasLoader } from "../loader/KerasLoader";
 import { TfLoader } from "../loader/TfLoader";
+import { LiveLoader } from "../loader/LiveLoader";
 import { ModelConfiguration } from "../configure/ModelConfiguration";
+import { HTMLUtils } from '../utils/HTMLUtils';
 
 /**
  * AbstractModel, abstract model, should not be initialized directly.
  * Base class for Sequential, Model
  *
  * @param container, a DOM element where TSP model will be rendered to.
- * @param config, user's config for Sequential model.
+ * @param config, user's config for model.
  * @constructor
  */
 
 function AbstractModel( container, config ) {
-
-	// AbstractModel mixin "SceneInitializer".
-
-	SceneInitializer.call( this, container );
-
+	
 	/**
-	 *	Store loader.
-	 *	Three kinds of loader: TfLoader, TfjsLoader, KerasLoader.
+	 * TensorSpace Model will be rendered in this HTML Dom element.
+	 *
+	 * @type { HTMLElement }
+	 */
+	
+	this.container = undefined;
+	
+	/**
+	 * Store loader.
+	 * Four kinds of loader: TfLoader, TfjsLoader, KerasLoader, LiveLoader.
 	 *
 	 * @type { Loader }
 	 */
-
+	
 	this.loader = undefined;
-
+	
 	/**
 	 * Sign showing whether model has a preload loader.
 	 * true -- has a preload loader
@@ -40,9 +46,9 @@ function AbstractModel( container, config ) {
 	 *
 	 * @type { boolean }
 	 */
-
+	
 	this.hasLoader = false;
-
+	
 	/**
 	 * Whether model has loaded a prediction model.
 	 * true -- A loader has already load a prediction to TSP model
@@ -50,200 +56,240 @@ function AbstractModel( container, config ) {
 	 *
 	 * @type { boolean }
 	 */
-
+	
 	this.isInitialized = false;
-
+	
 	/**
 	 * Actual prediction model.
 	 * undefined means no prediction model.
 	 *
 	 * @type { model }
 	 */
-
+	
 	this.resource = undefined;
-
+	
 	/**
 	 * Store user's input value for prediction.
 	 *
 	 * @type { Array }
 	 */
-
+	
 	this.inputValue = undefined;
-
+	
 	/**
 	 * Store prediction result from prediction model.
 	 *
 	 * @type { undefined }
 	 */
-
+	
 	this.predictResult = undefined;
-
+	
 	/**
 	 * Used to trigger model prediction and get predict result
 	 *
 	 * @type { Predictor }
 	 */
-
+	
 	this.predictor = undefined;
-
+	
 	/**
 	 * Prediction model type.
-	 * Three types now: "Model", "Sequential"
+	 * Two types now: "Model", "Sequential"
 	 *
 	 * @type { string }
 	 */
-
+	
 	this.modelType = undefined;
-
+	
 	/**
 	 * Store all layers in Model.
 	 *
 	 * @type { Layer[] }
 	 */
-
+	
 	this.layers = [];
-
+	
 	/**
-	 * Record layer hovered by mouse now.
+	 * Model's depth in visualization.
 	 *
-	 * @type { Layer }
+	 * @type { Int }
 	 */
-
-	this.hoveredLayer = undefined;
-
+	
+	this.depth = undefined;
+	
 	/**
 	 * Model configuration.
 	 * Initialized with user's model config and default model config.
 	 *
 	 * @type { ModelConfiguration }
 	 */
-
-	this.configuration = new ModelConfiguration( config );
-
-	// Pass configuration to three.js scene.
-
-	this.loadSceneConfig( this.configuration );
-
-	// Create actual three.js scene.
-
-	this.createScene();
-
+	
+	this.configuration = undefined;
+	
+	/**
+	 * Model's context, containing all THREE.Object for a TSP model.
+	 *
+	 * @type { THREE.Object }
+	 */
+	
+	this.modelContext = new THREE.Object3D();
+	
+	this.loadConfiguration( container, config );
+	
 }
 
-AbstractModel.prototype = Object.assign( Object.create( SceneInitializer.prototype ), {
-
+AbstractModel.prototype = {
+	
+	loadConfiguration: function( args1, args2 ) {
+		
+		if ( HTMLUtils.isElement( args1 ) ) {
+			
+			this.container = args1;
+			this.configuration = new ModelConfiguration( args2 );
+			
+		} else {
+			
+			this.configuration = new ModelConfiguration( args1 );
+			
+		}
+		
+	},
+	
 	/**
 	 * load(), load prediction model based on "type" attribute in user's configuration.
 	 *
 	 * @param config
 	 */
-
+	
 	load: function( config ) {
-
+		
 		if ( config.type === "tfjs" ) {
-
+			
 			this.loadTfjsModel( config );
-
+			
 		} else if ( config.type === "keras" ) {
-
+			
 			this.loadKerasModel( config );
-
+			
 		} else if ( config.type === "tensorflow" ) {
-
+			
 			this.loadTfModel( config );
-
+			
+		} else if ( config.type = "live" ) {
+			
+			this.loadLiveModel( config );
+			
 		} else {
-
+			
 			console.error( "Do not support to load model type " + config.type );
-
+			
 		}
-
+		
 	},
-
+	
 	/**
 	 * loadTfjsModel(), create TFJSLoader and execute preLoad.
 	 *
 	 * @param config, user's config for TfjsLoader.
 	 */
-
+	
 	loadTfjsModel: function( config ) {
-
+		
 		let loader = new TfjsLoader( this, config );
 		loader.preLoad();
-
+		
 	},
-
+	
 	/**
 	 * loadKerasModel(), create KerasLoader and execute preLoad.
 	 *
 	 * @param config, user's config for KerasLoader.
 	 */
-
+	
 	loadKerasModel: function( config ) {
-
+		
 		let loader = new KerasLoader( this, config );
 		loader.preLoad();
-
+		
 	},
-
+	
 	/**
 	 * loadTfModel(), create TfLoader and execute preLoad.
 	 *
 	 * @param config, user's config for TfLoader.
 	 */
-
+	
 	loadTfModel: function( config ) {
-
+		
 		let loader = new TfLoader( this, config );
 		loader.preLoad();
-
+		
 	},
-
+	
+	loadLiveModel: function( config ) {
+		
+		let loader = new LiveLoader( this, config );
+		loader.preLoad();
+		
+	},
+	
 	/**
 	 * Store loader.
 	 *
 	 * @param loader
 	 */
-
+	
 	setLoader: function( loader ) {
-
+		
 		this.loader = loader;
-
+		
 	},
-
+	
 	/**
 	 * Get TSP layer stored in model by name.
 	 *
 	 * @param name
 	 * @return { Layer }, layer with given name.
 	 */
-
+	
 	getLayerByName: function( name ) {
-
+		
 		for ( let i = 0; i < this.layers.length; i ++ ) {
-
+			
 			if ( this.layers[ i ].name === name ) {
-
+				
 				return this.layers[ i ];
-
+				
 			}
-
+			
 		}
-
+		
 	},
-
+	
 	/**
 	 * Get all TSP layer stored in model.
 	 *
 	 * @return { Layer[] }, layer list.
 	 */
-
+	
 	getAllLayers: function() {
-
+		
 		return this.layers;
-
+		
 	},
-
+	
+	/**
+	 * return Actual prediction model,
+	 * Developer can directly manipulate the model,
+	 * for example, get model summary, make predictions.
+	 */
+	
+	getPredictionModel: function() {
+		
+		return this.resource;
+		
+	},
+	
 	/**
 	 * init(), Init model,
 	 * As TSP is applying lazy initialization strategy, time-consuming work will be done in this process.
@@ -251,48 +297,48 @@ AbstractModel.prototype = Object.assign( Object.create( SceneInitializer.prototy
 	 *
 	 * @param callback, user's predefined callback function, fired when init process completed.
 	 */
-
+	
 	init: function( callback ) {
-
+		
 		if ( this.hasLoader ) {
-
+			
 			// If has a predefined loader, load model before init sequential elements.
-
+			
 			let self = this;
 			this.loader.load().then( function() {
-
+				
 				// Init sequential elements.
-
+				
 				self.initTSPModel();
-
+				
 				// Execute callback at the end if callback function is predefined.
-
+				
 				if ( callback !== undefined ) {
-
+					
 					callback();
-
+					
 				}
-
+				
 			} );
-
+			
 		} else {
-
+			
 			// Init sequential elements.
-
+			
 			this.initTSPModel();
-
+			
 			// Execute callback at the end if callback function is predefined.
-
+			
 			if ( callback !== undefined ) {
-
+				
 				callback();
-
+				
 			}
-
+			
 		}
-
+		
 	},
-
+	
 	/**
 	 * ============
 	 *
@@ -301,7 +347,7 @@ AbstractModel.prototype = Object.assign( Object.create( SceneInitializer.prototy
 	 *
 	 * ============
 	 */
-
+	
 	/**
 	 * predict(), abstract method
 	 *
@@ -310,66 +356,42 @@ AbstractModel.prototype = Object.assign( Object.create( SceneInitializer.prototy
 	 * @param input, user's input data
 	 * @param callback, user' predefined callback function, execute after prediction.
 	 */
-
+	
 	predict: function( input, callback ) {
-
-
+	
+	
 	},
-
+	
 	/**
 	 * clear(), abstract method
 	 *
 	 * Override to clear all layers' visualization and model's input data.
 	 */
-
+	
 	clear: function() {
-
+	
 	},
-
+	
 	/**
 	 * reset(), abstract method
 	 *
 	 * Override to add reset model.
 	 */
-
+	
 	reset: function() {
-
+	
 	},
-
-	/**
-	 * onClick(), abstract method.
-	 *
-	 * override this function to add handler for click event.
-	 *
-	 * @param event
-	 */
-
-	onClick: function( event ) {
-
-	},
-
-	/**
-	 * onMouseMove(), abstract method.
-	 *
-	 * Override this function to add handler for mouse move event.
-	 *
-	 * @param event
-	 */
-
-	onMouseMove: function( event ) {
-
-	},
-
+	
 	/**
 	 * initTSPModel(), abstract method
 	 *
 	 * Override to handle actual element creation.
 	 */
-
+	
 	initTSPModel: function() {
-
+	
 	}
-
-} );
+	
+};
 
 export { AbstractModel };

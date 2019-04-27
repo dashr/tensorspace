@@ -2,6 +2,8 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as TWEEN from '@tweenjs/tween.js';
+
 let YoloTweenFactory = ( function() {
 
 	function openLayer( layer ) {
@@ -47,8 +49,12 @@ let YoloTweenFactory = ( function() {
 
 		} ).onComplete( function() {
 
-			layer.initCloseButton();
-
+			if ( layer.hasCloseButton ) {
+				
+				layer.initCloseButton();
+				
+			}
+			
 		} );
 
 		yoloOutputTween.start();
@@ -91,8 +97,12 @@ let YoloTweenFactory = ( function() {
 
 		} ).onStart( function() {
 
-			layer.disposeCloseButton();
-
+			if ( layer.hasCloseButton ) {
+				
+				layer.disposeCloseButton();
+				
+			}
+			
 		} ).onComplete( function() {
 
 			layer.disposeSegregationElements();

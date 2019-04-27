@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { FrameColor } from "../utils/Constant";
 import { ColorUtils } from "../utils/ColorUtils";
 import { RenderPreprocessor } from "../utils/RenderPreprocessor";
@@ -21,7 +22,10 @@ function MapAggregation( width, height, unitLength, depth, color, minOpacity ) {
 	this.aggregationElement = undefined;
 
 	this.dataArray = undefined;
+	this.dataArrayCache = undefined;
 	this.dataTexture = undefined;
+	
+	this.basicMaterial = undefined;
 
 	this.init();
 
@@ -57,6 +61,8 @@ MapAggregation.prototype = {
 			transparent: true
 
 		} );
+		
+		this.basicMaterial = basicMaterial;
 
 		let materials = [
 
@@ -75,6 +81,10 @@ MapAggregation.prototype = {
 		cube.elementType = "aggregationElement";
 		cube.clickable = true;
 		cube.hoverable = true;
+		cube.draggable = true;
+		cube.emissiveable = true;
+		
+		cube.context = this;
 
 		this.cube = cube;
 
@@ -129,6 +139,48 @@ MapAggregation.prototype = {
 
 		this.dataTexture.needsUpdate = true;
 
+	},
+	
+	emissive: function() {
+		
+		let cacheData = new Uint8Array( this.dataArray.length );
+		
+		for ( let i = 0; i < this.dataArray.length; i ++ ) {
+			
+			cacheData[ i ] = this.dataArray[ i ];
+			
+		}
+		
+		this.dataArrayCache = cacheData;
+		
+		for ( let i = 0; i < this.dataArray.length; i ++ ) {
+			
+			this.dataArray[ i ] = Math.min( this.dataArray[ i ] + 30, 255 );
+			
+		}
+		
+		this.basicMaterial.opacity += 0.2;
+		
+		this.dataTexture.needsUpdate = true;
+		this.basicMaterial.needsUpdate = true;
+		
+	},
+	
+	darken: function() {
+		
+		for ( let i = 0; i < this.dataArray.length; i ++ ) {
+			
+			this.dataArray[ i ] = this.dataArrayCache[ i ];
+			
+		}
+		
+		this.dataArrayCache = undefined;
+		
+		this.basicMaterial.opacity -= 0.2;
+		
+		this.dataTexture.needsUpdate = true;
+		this.basicMaterial.needsUpdate = true;
+		
 	}
 
 };

@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { QueueTransitionFactory } from "../../animation/QueueTransitionTween";
 import { ColorUtils } from "../../utils/ColorUtils";
 import { QueueAggregation } from "../../elements/QueueAggregation";
@@ -167,7 +168,7 @@ NativeLayer1d.prototype = Object.assign( Object.create( NativeLayer.prototype ),
 	 */
 
 	/**
-	 * init() create actual THREE.Object in NativeLayer1d, warp them into a group, and add it to THREE.js's scene.
+	 * init() create actual THREE.Object in NativeLayer1d, warp them into a group, and add it to Model context.
 	 *
 	 * Model passes two parameters, center and actualDepth, to NativeLayer1d when call init() to initialize NativeLayer1d.
 	 *
@@ -211,9 +212,9 @@ NativeLayer1d.prototype = Object.assign( Object.create( NativeLayer.prototype ),
 
 		}
 
-		// Add the wrapper object to the actual THREE.js scene.
+		// Add the wrapper object to the actual THREE.js object.
 
-		this.scene.add( this.neuralGroup );
+		this.context.add( this.neuralGroup );
 
 		// Create relative line element.
 
@@ -459,7 +460,7 @@ NativeLayer1d.prototype = Object.assign( Object.create( NativeLayer.prototype ),
 
 		if ( ( this.isOpen && !this.isWaitClose ) || this.isWaitOpen ) {
 
-			return this.actualWidth / 2 - this.calcCloseButtonPos().x + this.calcCloseButtonSize();
+			return this.actualWidth / 2 - this.calcCloseButtonPos().x + 8 * this.calcCloseButtonSize();
 
 		} else {
 
@@ -467,6 +468,46 @@ NativeLayer1d.prototype = Object.assign( Object.create( NativeLayer.prototype ),
 
 		}
 
+	},
+	
+	emissive: function() {
+		
+		if ( !this.isEmissive ) {
+			
+			if ( this.isOpen ) {
+				
+				this.queueHandler.emissive();
+				
+			} else {
+				
+				this.aggregationHandler.emissive();
+				
+			}
+			
+			this.isEmissive = true;
+			
+		}
+		
+	},
+	
+	darken: function() {
+		
+		if ( this.isEmissive ) {
+			
+			if ( this.isOpen ) {
+				
+				this.queueHandler.darken();
+				
+			} else {
+				
+				this.aggregationHandler.darken();
+				
+			}
+		
+			this.isEmissive = false;
+			
+		}
+		
 	},
 
 	/**
@@ -1048,14 +1089,14 @@ NativeLayer1d.prototype = Object.assign( Object.create( NativeLayer.prototype ),
 
 	/**
 	 * assemble() abstract method
-	 * Configure layer's index in model, calculate the shape and parameters based on previous layer.
+	 * calculate the shape and parameters based on previous layer or pre-defined shape.
 	 *
 	 * Override this function to get information from previous layer.
 	 *
 	 * @param { int } layerIndex, this layer's order in model.
 	 */
 
-	assemble: function( layerIndex ) {
+	assemble: function( layerIndex, layerLevel ) {
 
 	},
 

@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { NativeLayer } from "../abstract/NativeLayer";
 import { FmCenterGenerator } from "../../utils/FmCenterGenerator";
 import { InputMap3d } from "../../elements/InputMap3d";
@@ -38,10 +39,6 @@ function RGBInput( config ) {
 	this.height = undefined;
 	this.depth = 3;
 
-	// Load user's RGBInput configuration.
-
-	this.loadLayerConfig( config );
-
 	/**
 	 * As RGBInput is the first layer model, actualWidth is defined as a const.
 	 * Use actualWidth to calculate actualHeight.
@@ -50,7 +47,7 @@ function RGBInput( config ) {
 	 */
 
 	this.actualWidth = ModelInitWidth;
-	this.actualHeight = this.actualWidth / this.width * this.height;
+	this.actualHeight = undefined;
 
 	/**
 	 * Calculate unitLength for latter layers.
@@ -58,7 +55,7 @@ function RGBInput( config ) {
 	 * @type { double }
 	 */
 
-	this.unitLength =  this.actualWidth / this.width;
+	this.unitLength =  undefined;
 
 
 	/**
@@ -166,22 +163,22 @@ RGBInput.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
 
 		this.initAggregationElement();
 
-		// Add the wrapper object to the actual THREE.js scene.
+		// Add the wrapper object to the actual THREE.js object.
 
-		this.scene.add( this.neuralGroup );
+		this.context.add( this.neuralGroup );
 
 	},
-
-	/**
-	 * assemble() configure layer's index in model.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
-	 */
-
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	
+	assemble: function() {
+		
+		// Load user's RGBInput configuration.
+		
+		this.loadLayerConfig( this.config );
+		
+		this.actualHeight = this.actualWidth / this.width * this.height;
+		this.unitLength =  this.actualWidth / this.width;
+		this.openFmCenters = FmCenterGenerator.getFmCenters( "line", 3, this.actualWidth, this.actualHeight );
+		
 	},
 
 	/**
@@ -449,6 +446,54 @@ RGBInput.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
 
 		}
 
+	},
+	
+	emissive: function() {
+		
+		if ( !this.isEmissive ) {
+			
+			if ( this.isOpen ) {
+				
+				for ( let i = 0; i < this.segregationHandlers.length; i ++ ) {
+					
+					this.segregationHandlers[ i ].emissive();
+					
+				}
+				
+			} else {
+				
+				this.aggregationHandler.emissive();
+				
+			}
+			
+			this.isEmissive = true;
+			
+		}
+		
+	},
+	
+	darken: function() {
+		
+		if ( this.isEmissive ) {
+			
+			if ( this.isOpen ) {
+				
+				for ( let i = 0; i < this.segregationHandlers.length; i ++ ) {
+					
+					this.segregationHandlers[ i ].darken();
+					
+				}
+				
+			} else {
+				
+				this.aggregationHandler.darken();
+				
+			}
+			
+			this.isEmissive = false;
+			
+		}
+		
 	},
 
 	/**

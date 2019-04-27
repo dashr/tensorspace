@@ -54,6 +54,15 @@ function MergedLayer( config ) {
 
 	this.mergedElements = [];
 
+	/**
+	 * layerType will be set based on operation strategy.
+	 * For example: Add3d, Subtract1d, Maximum2d
+	 *
+	 * @type { String }
+	 */
+
+	this.layerType = undefined;
+
 }
 
 MergedLayer.prototype = Object.assign( Object.create( Layer.prototype ), {
@@ -67,7 +76,7 @@ MergedLayer.prototype = Object.assign( Object.create( Layer.prototype ), {
 		this.lineGroupHandler = new MergedLineGroup(
 
 			this,
-			this.scene,
+			this.context,
 			this.neuralGroup,
 			this.color,
 			this.minOpacity
@@ -101,14 +110,14 @@ MergedLayer.prototype = Object.assign( Object.create( Layer.prototype ), {
 
 	/**
 	 * assemble() abstract method
-	 * Configure layer's index in model, calculate the shape and parameters based on previous layer.
+	 * calculate the shape and parameters based on previous layer or pre-defined shape.
 	 *
 	 * Override this function to get information from previous layer
 	 *
 	 * @param { int } layerIndex, this layer's order in model
 	 */
 
-	assemble: function( layerIndex ) {
+	assemble: function( layerIndex, layerLevel ) {
 
 	},
 

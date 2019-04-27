@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { FrameColor } from "../utils/Constant";
 import { ColorUtils } from "../utils/ColorUtils";
 
@@ -68,6 +69,7 @@ GridAggregation.prototype = {
 		cube.elementType = "aggregationElement";
 		cube.clickable = true;
 		cube.hoverable = true;
+		cube.draggable = true;
 
 		this.aggregationEntity = cube;
 

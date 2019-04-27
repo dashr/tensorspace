@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { RenderPreprocessor } from "../utils/RenderPreprocessor";
 import { ColorUtils } from "../utils/ColorUtils";
 import { TextFont } from "../assets/fonts/TextFont";
@@ -105,6 +106,7 @@ GridLine.prototype = {
 		cube.position.set( 0, 0, 0 );
 		cube.elementType = "gridLine";
 		cube.hoverable = true;
+		cube.draggable = true;
 
 		this.gridEntity = cube;
 

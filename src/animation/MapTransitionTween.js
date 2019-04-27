@@ -2,6 +2,8 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as TWEEN from '@tweenjs/tween.js';
+
 let MapTransitionFactory = ( function() {
 
 	function openLayer( layer ) {
@@ -46,7 +48,11 @@ let MapTransitionFactory = ( function() {
 
 		} ).onComplete( function() {
 
-			layer.initCloseButton();
+			if ( layer.hasCloseButton ) {
+				
+				layer.initCloseButton();
+				
+			}
 
 		} );
 
@@ -90,8 +96,12 @@ let MapTransitionFactory = ( function() {
 
 		} ).onStart( function() {
 
-			layer.disposeCloseButton();
-
+			if ( layer.hasCloseButton ) {
+				
+				layer.disposeCloseButton();
+				
+			}
+			
 		} ).onComplete( function() {
 
 			layer.disposeSegregationElements();

@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { NativeLayer } from '../abstract/NativeLayer';
 import { ColorUtils } from '../../utils/ColorUtils';
 import { QueueAggregation } from "../../elements/QueueAggregation";
@@ -132,10 +133,6 @@ function Output1d( config ) {
 
 	this.autoOutputDetect = false;
 
-	// Load user's Output1d configuration.
-
-	this.loadLayerConfig( config );
-
 	this.layerType = "Output1d";
 
 }
@@ -199,9 +196,9 @@ Output1d.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
 
 		}
 
-		// Add the wrapper object to the actual THREE.js scene.
+		// Add the wrapper object to the actual THREE.js object.
 
-		this.scene.add( this.neuralGroup );
+		this.context.add( this.neuralGroup );
 
 		// Create relative line element.
 
@@ -210,15 +207,15 @@ Output1d.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
 	},
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
+	assemble: function() {
+		
+		// Load user's Output1d configuration.
+		
+		this.loadLayerConfig( this.config );
+		
 		// Conv2d layer's outputShape has one dimension.
 
 		this.outputShape = [ this.width ];
@@ -503,6 +500,46 @@ Output1d.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
 		}
 
 	},
+	
+	emissive: function() {
+	
+		if ( !this.isEmissive ) {
+			
+			if ( this.isOpen ) {
+				
+				this.outputHandler.emissive();
+				
+			} else {
+				
+				this.aggregationHandler.emissive();
+				
+			}
+			
+			this.isEmissive = true;
+			
+		}
+		
+	},
+	
+	darken: function() {
+		
+		if ( this.isEmissive ) {
+			
+			if ( this.isOpen ) {
+				
+				this.outputHandler.darken();
+				
+			} else {
+				
+				this.aggregationHandler.darken();
+				
+			}
+			
+			this.isEmissive = false;
+			
+		}
+		
+	},
 
 	/**
 	 * ============
@@ -559,13 +596,23 @@ Output1d.prototype = Object.assign( Object.create( NativeLayer.prototype ), {
 
 		if ( layerConfig !== undefined ) {
 
-			if ( layerConfig.units !== undefined ) {
+			if ( layerConfig.shape !== undefined ) {
 
-				this.width = layerConfig.units;
+				// Load user's predefined layer shape.
+
+				this.width = layerConfig.shape[ 0 ];
 
 			} else {
 
-				console.error( "\"units\" property is required for Ouput1d layer." );
+				if ( layerConfig.units !== undefined ) {
+
+					this.width = layerConfig.units;
+
+				} else {
+
+					console.error( "\"units\" property is required for Ouput1d layer." );
+
+				}
 
 			}
 

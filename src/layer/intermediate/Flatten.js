@@ -17,10 +17,6 @@ function Flatten( config ) {
 
 	NativeLayer1d.call( this, config );
 
-	// Load user's Flatten configuration.
-
-	this.loadLayerConfig( config );
-
 	this.layerType = "Flatten";
 
 }
@@ -39,26 +35,32 @@ Flatten.prototype = Object.assign( Object.create( NativeLayer1d.prototype ), {
 	 */
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
+	assemble: function() {
+		
+		// Load user's Flatten configuration.
+		
+		this.loadLayerConfig( this.config );
+		
+		// If user's do not define a specific shape for layer, infer layer output shape from input shape and config.
 
-		this.layerIndex = layerIndex;
+		if ( !this.isShapePredefined ) {
 
-		let units = 1;
+			let units = 1;
 
-		// Calculate output length.
+			// Calculate output length.
 
-		for ( let i = 0; i < this.lastLayer.outputShape.length; i++ ) {
+			for ( let i = 0; i < this.lastLayer.outputShape.length; i++ ) {
 
-			units *= this.lastLayer.outputShape[ i ];
+				units *= this.lastLayer.outputShape[ i ];
+
+			}
+
+			this.width = units;
 
 		}
-
-		this.width = units;
 
 		if ( this.paging ) {
 
@@ -172,6 +174,15 @@ Flatten.prototype = Object.assign( Object.create( NativeLayer1d.prototype ), {
 	 */
 
 	loadLayerConfig: function( layerConfig ) {
+
+		if ( layerConfig.shape !== undefined ) {
+
+			// Load user's predefined shape.
+
+			this.isShapePredefined = true;
+			this.width = layerConfig.shape[ 0 ];
+
+		}
 
 	}
 

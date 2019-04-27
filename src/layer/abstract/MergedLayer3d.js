@@ -2,6 +2,7 @@
  * @author syt123450 / https://github.com/syt123450
  */
 
+import * as THREE from "three";
 import { FmCenterGenerator } from "../../utils/FmCenterGenerator";
 import { MergedLayer } from "./MergedLayer";
 import { ChannelDataGenerator } from "../../utils/ChannelDataGenerator";
@@ -68,7 +69,7 @@ function MergedLayer3d( config ) {
 	 * Initialized in MergedLayer3d's initStrategy period.
 	 * Applicable strategy: Add3d, Average3d, Concatenate3d, Dot3d, Maximum3d, Multiply3d, Subtract3d.
 	 *
-	 * @type { Object }, Strategy3d
+	 * @type { Object }, MergeStrategy3d
 	 */
 
 	this.operationStrategy = undefined;
@@ -88,8 +89,6 @@ function MergedLayer3d( config ) {
 
 	this.layerDimension = 3;
 
-	this.layerType = "MergedLayer3d";
-
 }
 
 MergedLayer3d.prototype = Object.assign( Object.create( MergedLayer.prototype ), {
@@ -107,7 +106,7 @@ MergedLayer3d.prototype = Object.assign( Object.create( MergedLayer.prototype ),
 	 */
 
 	/**
-	 * init() create actual THREE.Object in MergedLayer3d, warp them into a group, and add it to THREE.js's scene.
+	 * init() create actual THREE.Object in MergedLayer3d, warp them into a group, and add it to Model context.
 	 *
 	 * Model passes two parameters, center and actualDepth, to MergedLayer3d when call init() to initialize MergedLayer3d.
 	 *
@@ -132,6 +131,7 @@ MergedLayer3d.prototype = Object.assign( Object.create( MergedLayer.prototype ),
 			// Open layer and init one feature map (depth === 1) without initializing close button.
 
 			this.isOpen = true;
+			this.closeable = false;
 			this.initSegregationElements( this.openFmCenters );
 
 		} else {
@@ -156,9 +156,9 @@ MergedLayer3d.prototype = Object.assign( Object.create( MergedLayer.prototype ),
 
 		}
 
-		// Add the wrapper object to the actual THREE.js scene.
+		// Add the wrapper object to the actual THREE.js object.
 
-		this.scene.add( this.neuralGroup );
+		this.context.add( this.neuralGroup );
 
 		// Create relative line element.
 
@@ -167,19 +167,11 @@ MergedLayer3d.prototype = Object.assign( Object.create( MergedLayer.prototype ),
 	},
 
 	/**
-	 * assemble() configure layer's index in model, calculate the shape and parameters based on previous layer.
-	 *
-	 * @param { int } layerIndex, this layer's order in model
+	 * assemble() calculate the shape and parameters based on previous layer or pre-defined shape.
 	 */
 
-	assemble: function( layerIndex ) {
-
-		this.layerIndex = layerIndex;
-
-		// Set layer index to strategy, operationStrategy can know which layer it has been positioned.
-
-		this.operationStrategy.setLayerIndex( this.layerIndex );
-
+	assemble: function() {
+		
 		// Validate whether user's input merged elements can be merged in this kind of merge operation.
 
 		if( !this.operationStrategy.validate() ) {
@@ -187,11 +179,9 @@ MergedLayer3d.prototype = Object.assign( Object.create( MergedLayer.prototype ),
 			console.error( "Input shape is not valid for " + this.operator + " merge function." );
 
 		}
-
-		// Get output shape after merge operation.
-
+		
 		this.outputShape = this.operationStrategy.getOutputShape();
-
+		
 		this.inputShape = this.outputShape;
 
 		// The layer's shape is based on output shape.
@@ -223,7 +213,7 @@ MergedLayer3d.prototype = Object.assign( Object.create( MergedLayer.prototype ),
 		}
 
 		// Calculate the feature map centers for open status.
-
+		
 		this.openFmCenters = FmCenterGenerator.getFmCenters(
 
 			this.layerShape,
@@ -555,6 +545,54 @@ MergedLayer3d.prototype = Object.assign( Object.create( MergedLayer.prototype ),
 		}
 
 	},
+	
+	emissive: function() {
+		
+		if ( !this.isEmissive ) {
+			
+			if ( this.isOpen ) {
+				
+				for ( let i = 0; i < this.segregationHandlers.length; i ++ ) {
+					
+					this.segregationHandlers[ i ].emissive();
+					
+				}
+				
+			} else {
+				
+				this.aggregationHandler.emissive();
+				
+			}
+			
+			this.isEmissive = true;
+			
+		}
+		
+	},
+	
+	darken: function() {
+		
+		if ( this.isEmissive ) {
+			
+			if ( this.isOpen ) {
+				
+				for ( let i = 0; i < this.segregationHandlers.length; i ++ ) {
+					
+					this.segregationHandlers[ i ].darken();
+					
+				}
+				
+			} else {
+				
+				this.aggregationHandler.darken();
+				
+			}
+			
+			this.isEmissive = false;
+			
+		}
+		
+	},
 
 	/**
 	 * ============
@@ -634,6 +672,14 @@ MergedLayer3d.prototype = Object.assign( Object.create( MergedLayer.prototype ),
 			// Get concrete strategy from factory.
 
 			this.operationStrategy = StrategyFactory.getOperationStrategy( this.operator, 3, this.mergedElements );
+
+			// set layer context for operation strategy
+
+			this.operationStrategy.setLayerContext( this );
+
+			// Set layerType based on operation type.
+
+			this.layerType = this.operationStrategy.strategyType;
 
 		}
 
